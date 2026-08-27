@@ -1,0 +1,97 @@
+import type { FgcEvent } from "@/types";
+
+export const upcomingEvents: FgcEvent[] = [
+  {
+    id: "1",
+    title: "FGC Nord Weekly #24",
+    date: "2026-09-04T18:00:00",
+    endDate: "2026-09-04T22:00:00",
+    description:
+      "Hver uge samles vi til casuals, friendlies og små turneringer. Alle niveauer er velkomne.",
+    location: "Aalborg",
+    game: "ultimate",
+    format: "offline",
+    url: "/turneringer",
+    attendees: 24,
+    maxAttendees: 48,
+    startggUrl: "https://start.gg/fgcnord",
+  },
+  {
+    id: "2",
+    title: "Melee Monthly September",
+    date: "2026-09-12T12:00:00",
+    endDate: "2026-09-12T18:00:00",
+    description:
+      "Månedlig Melee-turnering med double elimination. Setup med CRT'er og Slippi stations.",
+    location: "Aalborg",
+    game: "melee",
+    format: "offline",
+    url: "/turneringer",
+    attendees: 18,
+    maxAttendees: 32,
+    startggUrl: "https://start.gg/fgcnord",
+  },
+  {
+    id: "3",
+    title: "Rivals of Aether 2 Online Night",
+    date: "2026-09-18T19:00:00",
+    endDate: "2026-09-18T22:00:00",
+    description:
+      "Online RoA2 bracket med danske spillere. Join vores Discord for seeding og kampkampe.",
+    location: "Online",
+    game: "roa2",
+    format: "online",
+    url: "/turneringer",
+    attendees: 12,
+    maxAttendees: 32,
+    startggUrl: "https://start.gg/fgcnord",
+  },
+];
+
+export const allEvents: FgcEvent[] = [
+  ...upcomingEvents,
+  {
+    id: "4",
+    title: "FGC Nord Summer Slam",
+    date: "2026-08-15T10:00:00",
+    endDate: "2026-08-15T20:00:00",
+    description:
+      "Sommerens største lokale event med Melee, Ultimate og RoA2 under ét tag.",
+    location: "Aalborg",
+    game: "all",
+    format: "offline",
+    url: "/turneringer",
+    attendees: 41,
+    maxAttendees: 96,
+    startggUrl: "https://start.gg/fgcnord",
+  },
+  {
+    id: "5",
+    title: "Ultimate Beginner Bracket",
+    date: "2026-08-22T17:00:00",
+    endDate: "2026-08-22T21:00:00",
+    description:
+      "Turnering kun for nye spillere. Lær basics, mød andre begyndere og få feedback.",
+    location: "Aalborg",
+    game: "ultimate",
+    format: "offline",
+    url: "/turneringer",
+    attendees: 9,
+    maxAttendees: 24,
+    startggUrl: "https://start.gg/fgcnord",
+  },
+  {
+    id: "6",
+    title: "Melee Netplay Weekly",
+    date: "2026-08-27T19:30:00",
+    endDate: "2026-08-27T23:00:00",
+    description: "Online Melee via Slippi. Rolig uge-turnering med hurtig bracket.",
+    location: "Online",
+    game: "melee",
+    format: "online",
+    url: "/turneringer",
+    attendees: 14,
+    maxAttendees: 24,
+    startggUrl: "https://start.gg/fgcnord",
+  },
+];

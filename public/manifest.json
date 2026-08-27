@@ -1,0 +1,26 @@
+{
+  "name": "FGC Nord",
+  "short_name": "FGC Nord",
+  "description": "Nordjyllands platform fighter-forening. Vi spiller Super Smash Bros. Melee, Ultimate og Rivals of Aether 2.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7F1E6",
+  "theme_color": "#F7F1E6",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "da",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
