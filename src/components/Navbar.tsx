@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Link, NavLink } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { Sparkle } from "./Sparkle";
@@ -24,6 +24,47 @@ export function DiscordIcon({ size = 20 }: { size?: number }) {
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const { pathname } = useLocation();
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
+
+  // Luk overlay ved route-skift
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
+  // Escape lukker + simpel focus-trap + fokus tilbage på knappen
+  useEffect(() => {
+    if (!open) return;
+    const overlay = overlayRef.current;
+    const focusables = () =>
+      Array.from(
+        overlay?.querySelectorAll<HTMLElement>("a[href], button:not([disabled])") ?? []
+      );
+    focusables()[0]?.focus();
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        toggleRef.current?.focus();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const items = focusables();
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -41,14 +82,14 @@ export function Navbar() {
 
   return (
     <header
-      className={`sticky top-0 z-50 border-b-[3px] border-ink bg-cream transition-shadow duration-200 ${
+      className={`sticky top-0 z-50 border-b-[3px] border-ink/60 bg-coal transition-shadow duration-200 ${
         scrolled ? "shadow-[0_4px_0_#141413]" : ""
       }`}
     >
       <div className="mx-auto flex h-[76px] max-w-[1200px] items-center justify-between px-5 md:px-6">
         <Link to="/" className="flex items-center gap-3" onClick={() => setOpen(false)}>
-          <img src="/fgc4v3_transparent.png" alt="FGC Nord logo" className="h-11 w-auto" />
-          <span className="font-display text-xl uppercase tracking-[-0.01em] text-ink">FGC Nord</span>
+          <img src="/fgc5_light_transparent.png" alt="FGC Nord logo" className="h-11 w-auto" />
+          <span className="font-display text-xl uppercase tracking-[-0.01em] text-cream">FGC Nord</span>
         </Link>
 
         {/* Desktop navigation */}
@@ -59,7 +100,7 @@ export function Navbar() {
               to={l.to}
               end={l.to === "/"}
               className={({ isActive }) =>
-                `relative text-[15px] font-semibold text-ink transition-colors hover:text-brick ${
+                `relative text-[15px] font-semibold text-cream/85 transition-colors hover:text-brick ${
                   isActive ? "after:absolute after:-bottom-[6px] after:left-0 after:h-[3px] after:w-full after:bg-brick" : "link-underline"
                 }`
               }
@@ -69,7 +110,7 @@ export function Navbar() {
           ))}
           <NavLink
             to="/bliv-medlem"
-            className="rounded-full border-[3px] border-ink bg-brick px-5 py-2 text-[15px] font-semibold uppercase tracking-[0.02em] text-cream shadow-poster-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-brick-soft hover:shadow-poster"
+            className="rounded-full border-[3px] border-ink bg-brick px-5 py-2 text-[15px] font-semibold uppercase tracking-[0.02em] text-ink shadow-poster-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-brick-soft hover:shadow-poster"
           >
             Bliv medlem
           </NavLink>
@@ -78,7 +119,7 @@ export function Navbar() {
             target="_blank"
             rel="noreferrer"
             aria-label="FGC Nord på Discord"
-            className="text-ink transition-all duration-200 hover:scale-110 hover:text-brick"
+            className="text-cream/85 transition-all duration-200 hover:scale-110 hover:text-brick"
           >
             <DiscordIcon size={24} />
           </a>
@@ -86,7 +127,7 @@ export function Navbar() {
 
         {/* Mobil hamburger */}
         <button
-          className="flex h-11 w-11 items-center justify-center rounded-xl border-[3px] border-ink bg-cream shadow-poster-sm lg:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-xl border-[3px] border-ink bg-coal border-cream/40 shadow-none lg:hidden"
           onClick={() => setOpen((v) => !v)}
           aria-label={open ? "Luk menu" : "Åbn menu"}
           aria-expanded={open}
@@ -99,6 +140,11 @@ export function Navbar() {
       <AnimatePresence>
         {open && (
           <motion.div
+            ref={overlayRef}
+            id="mobilmenu"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Mobilmenu"
             className="fixed inset-0 top-[76px] z-40 flex flex-col bg-coal lg:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

@@ -4,42 +4,42 @@
 
 @layer base {
   :root {
-    --cream: #F7F1E6;
-    --ink: #141413;
+    --cream: #F4F8FB;
+    --ink: #0B1526;
     --olive: #51512A;
-    --brick: #A84434;
-    --coal: #1A1A18;
-    --cream-dim: #EFE6D5;
-    --brick-soft: #C96A58;
+    --brick: #00AEEF;
+    --coal: #0A1E3C;
+    --cream-dim: #E4EDF5;
+    --brick-soft: #4FC3F7;
 
-    --background: 42 47% 94%;
-    --foreground: 60 3% 8%;
-    --card: 42 47% 94%;
-    --card-foreground: 60 3% 8%;
-    --popover: 42 47% 94%;
-    --popover-foreground: 60 3% 8%;
-    --primary: 8 53% 43%;
+    --background: 208 60% 97%;
+    --foreground: 219 55% 10%;
+    --card: 208 60% 97%;
+    --card-foreground: 219 55% 10%;
+    --popover: 208 60% 97%;
+    --popover-foreground: 219 55% 10%;
+    --primary: 199 100% 47%;
     --primary-foreground: 42 47% 94%;
-    --secondary: 40 32% 89%;
+    --secondary: 210 40% 92%;
     --secondary-foreground: 60 3% 8%;
-    --muted: 40 32% 89%;
+    --muted: 210 40% 92%;
     --muted-foreground: 60 32% 24%;
-    --accent: 40 32% 89%;
+    --accent: 210 40% 92%;
     --accent-foreground: 60 3% 8%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 42 47% 94%;
-    --border: 60 3% 8%;
-    --input: 60 3% 8%;
-    --ring: 8 53% 43%;
+    --border: 219 55% 10%;
+    --input: 219 55% 10%;
+    --ring: 199 100% 47%;
     --radius: 1rem;
     --sidebar-background: 42 47% 94%;
     --sidebar-foreground: 60 3% 8%;
-    --sidebar-primary: 8 53% 43%;
+    --sidebar-primary: 199 100% 47%;
     --sidebar-primary-foreground: 42 47% 94%;
     --sidebar-accent: 40 32% 89%;
     --sidebar-accent-foreground: 60 3% 8%;
     --sidebar-border: 60 3% 8%;
-    --sidebar-ring: 8 53% 43%;
+    --sidebar-ring: 199 100% 47%;
   }
 
   * {
@@ -48,10 +48,37 @@
 
   html {
     scroll-behavior: auto;
+    color-scheme: dark;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--cream) 22%, var(--coal)) var(--coal);
+  }
+
+  /* Global, synlig fokus-ring i himmelblå */
+  :focus-visible {
+    outline: 3px solid var(--brick-soft);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* Subtil scrollbar matchet navy-skal */
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--coal);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--cream) 22%, var(--coal));
+    border: 3px solid var(--coal);
+    border-radius: 8px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--brick);
   }
 
   body {
-    @apply bg-cream text-ink font-sans antialiased;
+    @apply bg-coal text-cream font-sans antialiased;
     font-size: 17px;
     line-height: 1.7;
   }

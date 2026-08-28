@@ -21,7 +21,7 @@ export function AccordionItem({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between px-5 py-4 text-left font-heading font-bold"
+        className="flex w-full items-center justify-between px-5 py-4 text-left font-heading font-bold text-ink"
       >
         {title}
         <ChevronDown

@@ -1,14 +1,13 @@
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import { Sparkle } from "@/components/Sparkle";
 import { WaveDivider } from "@/components/WaveDivider";
 import { SectionHeader } from "@/components/SectionHeader";
 import { EventCard } from "@/components/EventCard";
 import { CTASection } from "@/components/CTASection";
 import { GamesPinSection } from "@/components/home/GamesPinSection";
-import { HeroSection } from "@/components/home/HeroSection";
-import { StageStrikeTeaser } from "@/components/home/StageStrikeTeaser";
+import { HeroDecor } from "@/components/home/HeroDecor";
 import { upcomingEvents } from "@/data/events";
 
 const VALUES = [
@@ -17,21 +16,197 @@ const VALUES = [
   { title: "Lokal forankring", text: "Nordjylland er vores hjemmebane." },
 ];
 
+const TEASER_THUMBS = [
+  "/stage-thumbs/battlefield.png",
+  "/stage-thumbs/final-destination.png",
+  "/stage-thumbs/smashville.png",
+  "/stage-thumbs/town-and-city.png",
+];
+
+const GALLERY = [
+  {
+    src: "/gallery-himmerlan-roa2.jpg",
+    alt: "Top 8-grafik for Rivals of Aether II Singles ved HimmerLAN IGEN",
+    caption: "HimmerLAN IGEN · Rivals of Aether II · Top 8",
+  },
+  {
+    src: "/gallery-goml-spiller.jpg",
+    alt: "Koncentreret spiller med headset og event-badge under turnering",
+    caption: "Fokus på kampen · GOML",
+  },
+  {
+    src: "/gallery-himmerlan-ultimate.jpg",
+    alt: "Top 8-grafik for Ultimate Singles ved HimmerLAN IGEN",
+    caption: "HimmerLAN IGEN · Ultimate · Top 8",
+  },
+  {
+    src: "/gallery-vindere-aau.jpg",
+    alt: "Fire glade vindere med karakterhuer foran Studentersamfundet på Aalborg Universitet",
+    caption: "Vinderne · Aalborg Universitet",
+  },
+  {
+    src: "/gallery-himmerlan-melee.jpg",
+    alt: "Top 8-grafik for Melee ved HimmerLAN Fix",
+    caption: "HimmerLAN Fix · Melee · Top 8",
+  },
+  {
+    src: "/gallery-fest.jpg",
+    alt: "To smilende medlemmer til fællesspisning efter event",
+    caption: "Efterfest med crewet",
+  },
+  {
+    src: "/gallery-himmerlan-mkwii.jpg",
+    alt: "Top 8-kollage for Mario Kart Wii ved HimmerLAN IGEN",
+    caption: "HimmerLAN IGEN · Mario Kart Wii · Top 8",
+  },
+];
+
 const EASE = [0.16, 1, 0.3, 1] as [number, number, number, number];
 
+/** Synlig fokus-ring der matcher baggrunden */
+const FOCUS_DARK =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brick-soft focus-visible:ring-offset-2 focus-visible:ring-offset-coal";
+const FOCUS_LIGHT =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brick focus-visible:ring-offset-2 focus-visible:ring-offset-cream";
+const FOCUS_OLIVE =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brick-soft focus-visible:ring-offset-2 focus-visible:ring-offset-olive";
+
 export function Home() {
+  const reduced = useReducedMotion();
+  const from = <T extends object>(v: T): T | false => (reduced ? false : v);
+
   return (
     <>
-      {/* 1. HERO */}
-      <HeroSection />
+      {/* 1. HERO — nordlys på navy */}
+      <section className="halftone-dark relative overflow-hidden bg-coal text-cream">
+        <HeroDecor />
+        <div className="mx-auto grid min-h-[92vh] max-w-[1200px] items-center gap-12 px-6 pb-24 pt-28 lg:grid-cols-2 lg:py-16">
+          <div className="relative z-10">
+            <motion.p
+              initial={from({ opacity: 0 })}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6 }}
+              className="text-[13px] font-bold uppercase tracking-[0.18em] text-brick-soft"
+            >
+              Fighting Game Community Nordjylland
+            </motion.p>
+            <h1 className="mt-5 font-display text-[42px] uppercase leading-[1.02] tracking-[-0.02em] text-cream sm:text-[56px] md:text-[80px] lg:text-[88px]">
+              {"KOM & KÆMP".split(" ").map((ord, i) => (
+                <span key={i} className="inline-block overflow-hidden align-bottom">
+                  <motion.span
+                    className="inline-block"
+                    initial={from({ y: "110%" })}
+                    animate={{ y: 0 }}
+                    transition={{ duration: 0.7, ease: EASE, delay: reduced ? 0 : 0.15 + i * 0.08 }}
+                  >
+                    {ord}&nbsp;
+                  </motion.span>
+                </span>
+              ))}
+            </h1>
+            <motion.p
+              initial={from({ opacity: 0, y: 20 })}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: reduced ? 0 : 0.55 }}
+              className="mt-6 max-w-lg text-[16px] leading-[1.7] text-cream/85 md:text-[17px]"
+            >
+              FGC Nord er fællesskabet for alle kampspils-entusiaster i Aalborg og omegn — fra
+              Super Smash Bros. Melee og Ultimate til Rivals of Aether 2. Kom og spil, uanset alder
+              og niveau.
+            </motion.p>
+            <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
+              {[
+                <Link
+                  key="medlem"
+                  to="/bliv-medlem"
+                  className={`group inline-flex items-center justify-center gap-2.5 rounded-full border-[3px] border-cream bg-brick px-8 py-3.5 text-[15px] font-semibold uppercase tracking-[0.02em] text-ink shadow-poster-cream transition-all duration-200 hover:-translate-y-0.5 hover:bg-brick-soft ${FOCUS_DARK}`}
+                >
+                  Bliv medlem
+                  <Sparkle size={16} color="#0B1526" className="transition-transform duration-300 group-hover:rotate-90 group-hover:scale-110" />
+                </Link>,
+                <Link
+                  key="turneringer"
+                  to="/turneringer"
+                  className={`inline-flex items-center justify-center gap-2.5 rounded-full border-[3px] border-cream bg-transparent px-8 py-3.5 text-[15px] font-semibold uppercase tracking-[0.02em] text-cream transition-all duration-200 hover:-translate-y-0.5 hover:bg-cream hover:text-coal ${FOCUS_DARK}`}
+                >
+                  Se turneringer <ArrowRight size={18} aria-hidden="true" />
+                </Link>,
+              ].map((btn, i) => (
+                <motion.div
+                  key={i}
+                  initial={from({ opacity: 0, y: 30 })}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, ease: EASE, delay: reduced ? 0 : 0.7 + i * 0.12 }}
+                  whileHover={reduced ? undefined : { scale: 1.03 }}
+                  whileTap={reduced ? undefined : { scale: 0.98 }}
+                >
+                  {btn}
+                </motion.div>
+              ))}
+            </div>
+            <motion.ul
+              initial={from({ opacity: 0 })}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: reduced ? 0 : 1 }}
+              className="mt-8 flex flex-wrap gap-2.5"
+              aria-label="Spil vi spiller"
+            >
+              {["Melee", "Ultimate", "RoA2"].map((chip) => (
+                <li
+                  key={chip}
+                  className="rounded-full border-2 border-cream/50 px-4 py-1.5 text-[12px] font-bold uppercase tracking-[0.14em] text-cream/90"
+                >
+                  {chip}
+                </li>
+              ))}
+            </motion.ul>
+          </div>
 
-      {/* 2. WAVE DIVIDER */}
-      <div className="bg-olive">
-        <WaveDivider fill="#51512A" flip className="bg-cream" />
-      </div>
+          <div className="relative z-10 flex items-center justify-center">
+            <motion.div
+              initial={from({ opacity: 0, scale: 0.94 })}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.7, ease: EASE, delay: reduced ? 0 : 0.3 }}
+              className="relative"
+            >
+              {/* Nordlys-glow bag logo og illustration */}
+              <div
+                className="pointer-events-none absolute left-1/2 top-1/2 h-[110%] w-[110%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-brick/25 blur-[90px]"
+                aria-hidden="true"
+              />
+              <img
+                src="/hero-illustration.png"
+                alt="Rivals of Aether 2 key art med spillets karakterer samlet omkring logoet"
+                className="relative w-full max-w-[560px] rounded-2xl border-[3px] border-cream shadow-poster-cream"
+              />
+              <img
+                src="/fgc5_light_transparent.png"
+                alt="FGC Nord logo"
+                className="absolute -top-16 left-1/2 w-[150px] -translate-x-1/2 motion-safe:animate-float md:-top-24 md:w-[220px]"
+              />
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Scroll-hint */}
+        <motion.a
+          href="#events"
+          initial={from({ opacity: 0 })}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: reduced ? 0 : 1.2 }}
+          className={`absolute bottom-5 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-1 text-[11px] font-bold uppercase tracking-[0.18em] text-cream/70 transition-colors hover:text-cream md:flex ${FOCUS_DARK}`}
+          aria-label="Scroll ned til kommende events"
+        >
+          Udforsk
+          <ChevronDown size={20} aria-hidden="true" className="motion-safe:animate-bounce" />
+        </motion.a>
+      </section>
+
+      {/* 2. WAVE DIVIDER coal → olive */}
+      <WaveDivider fill="#51512A" className="bg-coal" />
 
       {/* 3. KOMMENDE EVENTS */}
-      <section className="bg-olive pb-24 pt-4 text-cream">
+      <section id="events" className="scroll-mt-24 bg-olive pb-24 pt-4 text-cream">
         <div className="mx-auto max-w-[1200px] px-6">
           <SectionHeader eyebrow="Kalender" title="Kommende events" light />
           <div className="mt-12 flex snap-x snap-mandatory gap-6 overflow-x-auto pb-4 md:grid md:grid-cols-3 md:overflow-visible">
@@ -39,10 +214,10 @@ export function Home() {
               <motion.div
                 key={event.id}
                 className="snap-center"
-                initial={{ opacity: 0, y: 40, rotate: -1.5 }}
+                initial={from({ opacity: 0, y: 40, rotate: -1.5 })}
                 whileInView={{ opacity: 1, y: 0, rotate: 0 }}
                 viewport={{ once: true, amount: 0.2 }}
-                transition={{ duration: 0.7, ease: EASE, delay: i * 0.12 }}
+                transition={{ duration: 0.7, ease: EASE, delay: reduced ? 0 : i * 0.12 }}
               >
                 <EventCard event={event} variant="olive" />
               </motion.div>
@@ -51,22 +226,25 @@ export function Home() {
           <div className="mt-10">
             <Link
               to="/turneringer"
-              className="link-underline inline-flex items-center gap-2 text-[15px] font-semibold uppercase tracking-[0.02em] text-cream"
+              className={`link-underline inline-flex items-center gap-2 rounded-sm text-[15px] font-semibold uppercase tracking-[0.02em] text-cream ${FOCUS_OLIVE}`}
             >
-              Se alle turneringer <ArrowRight size={18} />
+              Se alle turneringer <ArrowRight size={18} aria-hidden="true" />
             </Link>
           </div>
         </div>
       </section>
 
-      {/* 4. HVAD ER FGC NORD */}
-      <section className="bg-cream py-16 md:py-24">
+      {/* 4. WAVE DIVIDER olive → cream */}
+      <WaveDivider fill="#F4F8FB" className="bg-olive" />
+
+      {/* 5. HVAD ER FGC NORD */}
+      <section className="bg-cream py-16 text-ink md:py-24">
         <div className="mx-auto grid max-w-[1200px] items-center gap-12 px-6 lg:grid-cols-2">
           <motion.div
-            initial={{ clipPath: "inset(0 100% 0 0)" }}
+            initial={from({ clipPath: "inset(0 100% 0 0)" })}
             whileInView={{ clipPath: "inset(0 0% 0 0)" }}
             viewport={{ once: true, amount: 0.3 }}
-            transition={{ duration: 0.9, ease: EASE }}
+            transition={{ duration: 0.7, ease: EASE }}
           >
             <img
               src="/community-photo-1.png"
@@ -77,10 +255,10 @@ export function Home() {
           <div>
             <SectionHeader eyebrow="Om os" title="Hvad er FGC Nord?" />
             <motion.p
-              initial={{ opacity: 0, y: 24 }}
+              initial={from({ opacity: 0, y: 24 })}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
-              transition={{ duration: 0.7, ease: EASE, delay: 0.1 }}
+              transition={{ duration: 0.7, ease: EASE, delay: reduced ? 0 : 0.1 }}
               className="mt-6 text-[16px] leading-[1.7] text-olive md:text-[17px]"
             >
               Vi er en grassroots-forening stiftet af spillere i Nordjylland. Vi afholder ugentlige
@@ -91,53 +269,147 @@ export function Home() {
               {VALUES.map((v, i) => (
                 <motion.li
                   key={v.title}
-                  initial={{ opacity: 0, y: 24 }}
+                  initial={from({ opacity: 0, y: 24 })}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, amount: 0.4 }}
-                  transition={{ duration: 0.6, ease: EASE, delay: i * 0.15 }}
+                  transition={{ duration: 0.6, ease: EASE, delay: reduced ? 0 : i * 0.15 }}
                   className="flex items-start gap-4"
                 >
                   <motion.span
-                    initial={{ rotate: -90, scale: 0 }}
+                    initial={from({ rotate: -90, scale: 0 })}
                     whileInView={{ rotate: 0, scale: 1 }}
                     viewport={{ once: true }}
-                    transition={{ type: "spring", stiffness: 300, damping: 15, delay: i * 0.15 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 15, delay: reduced ? 0 : i * 0.15 }}
                     className="mt-1"
                   >
-                    <Sparkle size={22} />
+                    <Sparkle size={22} color="#00AEEF" />
                   </motion.span>
                   <div>
-                    <h3 className="font-heading text-lg font-bold">{v.title}</h3>
+                    <h3 className="font-heading text-lg font-bold text-ink">{v.title}</h3>
                     <p className="text-[15px] text-olive">{v.text}</p>
                   </div>
                 </motion.li>
               ))}
             </ul>
             <motion.div
-              initial={{ opacity: 0, y: 24 }}
+              initial={from({ opacity: 0, y: 24 })}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, ease: EASE, delay: 0.3 }}
+              transition={{ duration: 0.6, ease: EASE, delay: reduced ? 0 : 0.3 }}
               className="mt-9"
             >
               <Link
                 to="/om"
-                className="inline-flex items-center gap-2 rounded-full border-[3px] border-ink bg-transparent px-7 py-3 text-[15px] font-semibold uppercase tracking-[0.02em] text-ink transition-all duration-200 hover:-translate-y-0.5 hover:bg-ink hover:text-cream"
+                className={`inline-flex items-center gap-2 rounded-full border-[3px] border-ink bg-transparent px-7 py-3 text-[15px] font-semibold uppercase tracking-[0.02em] text-ink transition-all duration-200 hover:-translate-y-0.5 hover:bg-ink hover:text-cream ${FOCUS_LIGHT}`}
               >
-                Læs om foreningen <ArrowRight size={18} />
+                Læs om foreningen <ArrowRight size={18} aria-hidden="true" />
               </Link>
             </motion.div>
           </div>
         </div>
       </section>
 
-      {/* 5. SPILLENE — pin-sektion (GSAP ScrollTrigger, isoleret komponent) */}
+      {/* 6. WAVE DIVIDER cream → coal */}
+      <WaveDivider fill="#0A1E3C" className="bg-cream" />
+
+      {/* 7. SPILLENE — pin-sektion (GSAP ScrollTrigger, isoleret komponent) */}
       <GamesPinSection />
 
-      {/* 6. STAGE STRIKE TEASER */}
-      <StageStrikeTeaser />
+      {/* 8. GALLERI — stemninger & resultater */}
+      <WaveDivider fill="#F4F8FB" className="bg-coal" />
+      <section className="bg-cream py-16 text-ink md:py-24">
+        <div className="mx-auto max-w-[1200px] px-6">
+          <SectionHeader eyebrow="Galleri" title="Stemninger & resultater" />
+          <motion.p
+            initial={from({ opacity: 0, y: 24 })}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.7, ease: EASE, delay: reduced ? 0 : 0.1 }}
+            className="mt-6 max-w-2xl text-[16px] leading-[1.7] text-olive md:text-[17px]"
+          >
+            Top 8-grafikker og stemningsbilleder fra HimmerLAN og vores andre events — sådan ser
+            det ud, når Nordjylland slås.
+          </motion.p>
+          <div className="mt-12 columns-1 gap-6 sm:columns-2 lg:columns-3 [&>*]:mb-6">
+            {GALLERY.map((item, i) => (
+              <motion.figure
+                key={item.src}
+                initial={from({ opacity: 0, y: 40, rotate: i % 2 === 0 ? -1.5 : 1.5 })}
+                whileInView={{ opacity: 1, y: 0, rotate: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.7, ease: EASE, delay: reduced ? 0 : (i % 3) * 0.1 }}
+                className="break-inside-avoid"
+              >
+                <img
+                  src={item.src}
+                  alt={item.alt}
+                  loading="lazy"
+                  className="w-full rounded-2xl border-[3px] border-ink shadow-poster-lg"
+                />
+                <figcaption className="mt-2.5 px-1 text-[13px] font-semibold uppercase tracking-[0.08em] text-olive">
+                  {item.caption}
+                </figcaption>
+              </motion.figure>
+            ))}
+          </div>
+        </div>
+      </section>
+      <WaveDivider fill="#0A1E3C" className="bg-cream" />
 
-      {/* 7. CTA */}
+      {/* 9. STAGE STRIKE TEASER (coal — matcher CTA-sektionens bølge) */}
+      <section className="halftone-dark bg-coal py-16 text-center text-cream md:py-24">
+        <div className="mx-auto max-w-[820px] px-6">
+          <SectionHeader eyebrow="Værktøj" title="Strike som en pro" centered light />
+          <p className="mx-auto mt-6 max-w-xl text-[16px] leading-[1.7] text-cream/85 md:text-[17px]">
+            Brug vores interaktive stage strike-værktøj til Ultimate og Melee — med reglerne bygget
+            ind. Perfekt til weeklies og træning.
+          </p>
+          <div className="mt-10 flex justify-center gap-4 overflow-x-auto px-2 pb-2">
+            {TEASER_THUMBS.map((src, i) => (
+              <motion.div
+                key={src}
+                initial={from({ opacity: 0, y: 30, rotate: i % 2 === 0 ? -3 : 3 })}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.4 }}
+                transition={{ duration: 0.6, ease: EASE, delay: reduced ? 0 : i * 0.1 }}
+                className="group relative w-[160px] shrink-0 md:w-[190px]"
+              >
+                <img
+                  src={src}
+                  alt="Stage thumbnail fra stage strike-værktøjet"
+                  className="w-full rounded-xl border-[3px] border-cream shadow-poster-cream"
+                />
+                {i === 1 && (
+                  <svg
+                    viewBox="0 0 100 60"
+                    className="pointer-events-none absolute inset-0 h-full w-full opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                    aria-hidden="true"
+                  >
+                    <line x1="8" y1="6" x2="92" y2="54" stroke="#4FC3F7" strokeWidth="7" strokeLinecap="round" />
+                    <line x1="92" y1="6" x2="8" y2="54" stroke="#4FC3F7" strokeWidth="7" strokeLinecap="round" />
+                  </svg>
+                )}
+              </motion.div>
+            ))}
+          </div>
+          <motion.div
+            initial={from({ scale: 0.9, opacity: 0 })}
+            whileInView={{ scale: 1, opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            className="mt-10"
+          >
+            <Link
+              to="/stage-strike"
+              className={`inline-flex items-center gap-2 rounded-full border-[3px] border-cream bg-brick px-8 py-3.5 text-[15px] font-semibold uppercase tracking-[0.02em] text-ink shadow-poster-cream transition-all duration-200 hover:-translate-y-0.5 hover:bg-brick-soft ${FOCUS_DARK}`}
+            >
+              Prøv værktøjet <ArrowRight size={18} aria-hidden="true" />
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* 9. CTA */}
       <CTASection />
     </>
   );

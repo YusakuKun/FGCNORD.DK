@@ -1,542 +1,767 @@
-import { motion, AnimatePresence } from "framer-motion";
-import { Crown, RotateCcw, Share2, Swords, Trophy } from "lucide-react";
-import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  CheckCircle2,
+  Crown,
+  Dices,
+  RotateCcw,
+  Share2,
+  Trophy,
+  Undo2,
+} from "lucide-react";
+import { useRef, useState } from "react";
 
-import { PageHeader } from "@/components/PageHeader";
-import { Badge } from "@/components/ui/badge";
+import { RevealOverlay } from "@/components/stage-strike/RevealOverlay";
+import { StageCard, type CardState } from "@/components/stage-strike/StageCard";
+import { AccordionItem } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import type { GameType, Player, Stage, StageState } from "@/types";
+import type { GameType, Player, Stage } from "@/types";
 
-const ULTIMATE_STAGES: Stage[] = [
-  { id: "bf", name: "Battlefield", image: "/stage-thumbs/battlefield.png" },
-  { id: "fd", name: "Final Destination", image: "/stage-thumbs/fd.png" },
-  { id: "sv", name: "Smashville", image: "/stage-thumbs/smashville.png" },
-  { id: "tc", name: "Town & City", image: "/stage-thumbs/towncity.png" },
-  { id: "ps2", name: "Pokémon Stadium 2", image: "/stage-thumbs/ps2.png" },
-  { id: "kalos", name: "Kalos Pokémon League", image: "/stage-thumbs/kalos.png" },
-  { id: "lylat", name: "Lylat Cruise", image: "/stage-thumbs/lylat.png" },
-  { id: "yoshi", name: "Yoshi's Story", image: "/stage-thumbs/yoshi.png" },
+type StrikeStage = Stage & { starter: boolean };
+
+const ULTIMATE_STAGES: StrikeStage[] = [
+  // Starters (game 1)
+  { id: "bf", name: "Battlefield", image: "/stage-thumbs/battlefield.png", starter: true },
+  { id: "fd", name: "Final Destination", image: "/stage-thumbs/final-destination.png", starter: true },
+  { id: "sbf", name: "Small Battlefield", image: "/stage-thumbs/small-battlefield.png", starter: true },
+  { id: "ps2", name: "Pokémon Stadium 2", image: "/stage-thumbs/pokemon-stadium-2.png", starter: true },
+  { id: "sv", name: "Smashville", image: "/stage-thumbs/smashville.png", starter: true },
+  // Counterpicks
+  { id: "tc", name: "Town & City", image: "/stage-thumbs/town-&-city.png", starter: false },
+  { id: "hb", name: "Hollow Bastion", image: "", starter: false },
+  { id: "kalos", name: "Kalos Pokémon League", image: "/stage-thumbs/kalos-pokemon-league.png", starter: false },
 ];
 
-const MELEE_STAGES: Stage[] = [
-  { id: "bf", name: "Battlefield", image: "/melee-thumbs/battlefield.png" },
-  { id: "fd", name: "Final Destination", image: "/melee-thumbs/fd.png" },
-  { id: "ystory", name: "Yoshi's Story", image: "/melee-thumbs/ystory.png" },
-  { id: "fountain", name: "Fountain of Dreams", image: "/melee-thumbs/fountain.png" },
-  { id: "dreamland", name: "Dream Land", image: "/melee-thumbs/dreamland.png" },
-  { id: "pokemon", name: "Pokémon Stadium", image: "/melee-thumbs/pokemon.png" },
+const MELEE_STAGES: StrikeStage[] = [
+  // Starters (game 1)
+  { id: "dl", name: "Dream Land 64", image: "/melee-thumbs/dream-land.png", starter: true },
+  { id: "fod", name: "Fountain of Dreams", image: "/melee-thumbs/fountain-of-dreams.png", starter: true },
+  { id: "bf", name: "Battlefield", image: "/melee-thumbs/battlefield.png", starter: true },
+  { id: "fd", name: "Final Destination", image: "/melee-thumbs/final-destination.png", starter: true },
+  { id: "ys", name: "Yoshi's Story", image: "/melee-thumbs/yoshis-story.png", starter: true },
+  // Counterpick
+  { id: "ps", name: "Pokémon Stadium", image: "/melee-thumbs/pokemon-stadium.png", starter: false },
 ];
 
-const GAME_CONFIG = {
-  ultimate: { stages: ULTIMATE_STAGES, cpStrikes: 3, label: "Ultimate" },
-  melee: { stages: MELEE_STAGES, cpStrikes: 1, label: "Melee" },
+const GAME_CONFIG: Record<GameType, { label: string; bans: number; stages: StrikeStage[] }> = {
+  ultimate: { label: "Ultimate", bans: 3, stages: ULTIMATE_STAGES },
+  melee: { label: "Melee", bans: 1, stages: MELEE_STAGES },
 };
 
-type StrikeStep =
-  | "select-first"
-  | "game1-strike-p1"
-  | "game1-strike-p2"
-  | "game1-strike-p1-2"
-  | "report-winner"
-  | "winner-strike"
-  | "loser-pick"
-  | "game-over";
+type Phase =
+  | "choose-first" // vælg hvem der striker først
+  | "strike" // game 1: 1-2-1 strike på starters
+  | "ban" // counter-pick: vinderen banner
+  | "pick" // counter-pick: taberen vælger (DSR aktiv)
+  | "reveal" // reveal-overlay vises
+  | "report" // rapporter vinder af game
+  | "over"; // kampen er afgjort
+
+interface Snapshot {
+  phase: Phase;
+  players: Player[];
+  firstStriker: 0 | 1 | null;
+  lastWinner: 0 | 1 | null;
+  strikes: string[];
+  bans: string[];
+  pickedStage: string | null;
+  currentGame: number;
+  log: string[];
+}
+
+const other = (i: 0 | 1): 0 | 1 => (i === 0 ? 1 : 0);
 
 export function StageStrike() {
   const [game, setGame] = useState<GameType>("ultimate");
+  const [bestOf, setBestOf] = useState<3 | 5>(3);
+  const [phase, setPhase] = useState<Phase>("choose-first");
   const [players, setPlayers] = useState<Player[]>([
     { name: "Spiller 1", score: 0, stageWins: [] },
     { name: "Spiller 2", score: 0, stageWins: [] },
   ]);
-  const [step, setStep] = useState<StrikeStep>("select-first");
-  const [currentStriker, setCurrentStriker] = useState<0 | 1 | null>(null);
+  const [firstStriker, setFirstStriker] = useState<0 | 1 | null>(null);
   const [lastWinner, setLastWinner] = useState<0 | 1 | null>(null);
-  const [stageStates, setStageStates] = useState<Record<string, StageState>>({});
-  const [selectedStage, setSelectedStage] = useState<string | null>(null);
-  const [strikeCount, setStrikeCount] = useState(0);
+  const [strikes, setStrikes] = useState<string[]>([]);
+  const [bans, setBans] = useState<string[]>([]);
+  const [pickedStage, setPickedStage] = useState<string | null>(null);
   const [currentGame, setCurrentGame] = useState(1);
-  const [log, setLog] = useState<string[]>(["Vælg hvem der striker først."]);
+  const [log, setLog] = useState<string[]>([
+    "Vælg format og hvem der striker først – eller lad terningen afgøre det.",
+  ]);
+  const [history, setHistory] = useState<Snapshot[]>([]);
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const config = GAME_CONFIG[game];
-  const stages = config.stages;
+  const winsNeeded = bestOf === 3 ? 2 : 3;
 
-  const reset = (keepGame = true) => {
+  const snapshot = (): Snapshot => ({
+    phase,
+    players: players.map((p) => ({ ...p, stageWins: [...p.stageWins] })),
+    firstStriker,
+    lastWinner,
+    strikes: [...strikes],
+    bans: [...bans],
+    pickedStage,
+    currentGame,
+    log: [...log],
+  });
+
+  const pushHistory = () => setHistory((h) => [...h.slice(-29), snapshot()]);
+
+  const undo = () => {
+    setHistory((h) => {
+      const prev = h[h.length - 1];
+      if (!prev) return h;
+      setPhase(prev.phase);
+      setPlayers(prev.players);
+      setFirstStriker(prev.firstStriker);
+      setLastWinner(prev.lastWinner);
+      setStrikes(prev.strikes);
+      setBans(prev.bans);
+      setPickedStage(prev.pickedStage);
+      setCurrentGame(prev.currentGame);
+      setLog([...prev.log, "Sidste handling blev fortrudt."]);
+      return h.slice(0, -1);
+    });
+  };
+
+  const addLog = (msg: string) => setLog((l) => [...l, msg]);
+
+  const resetSeries = () => {
+    setPlayers([
+      { name: players[0].name || "Spiller 1", score: 0, stageWins: [] },
+      { name: players[1].name || "Spiller 2", score: 0, stageWins: [] },
+    ]);
+    setPhase("choose-first");
+    setFirstStriker(null);
+    setLastWinner(null);
+    setStrikes([]);
+    setBans([]);
+    setPickedStage(null);
+    setCurrentGame(1);
+    setHistory([]);
+    setLog(["Serie nulstillet. Vælg hvem der striker først."]);
+  };
+
+  const switchGame = (g: GameType) => {
+    setGame(g);
     setPlayers([
       { name: "Spiller 1", score: 0, stageWins: [] },
       { name: "Spiller 2", score: 0, stageWins: [] },
     ]);
-    setStep("select-first");
-    setCurrentStriker(null);
+    setPhase("choose-first");
+    setFirstStriker(null);
     setLastWinner(null);
-    setStageStates({});
-    setSelectedStage(null);
-    setStrikeCount(0);
+    setStrikes([]);
+    setBans([]);
+    setPickedStage(null);
     setCurrentGame(1);
-    setLog(["Vælg hvem der striker først."]);
-    if (!keepGame) setGame("ultimate");
+    setHistory([]);
+    setLog([`${GAME_CONFIG[g].label} valgt. Vælg hvem der striker først.`]);
   };
 
-  const addLog = (message: string) => {
-    setLog((prev) => [...prev, message]);
+  const selectFirstStriker = (i: 0 | 1) => {
+    pushHistory();
+    setFirstStriker(i);
+    setPhase("strike");
+    addLog(`${players[i].name} striker først. Fjern 1 stage.`);
   };
 
-  const handleSelectFirst = (index: 0 | 1) => {
-    setCurrentStriker(index);
-    setStep("game1-strike-p1");
-    addLog(`${players[index].name} striker først. Vælg 1 stage at fjerne.`);
+  const coinFlip = () => selectFirstStriker(Math.random() < 0.5 ? 0 : 1);
+
+  // Game 1 strike-sekvens (1-2-1): [første, anden, anden, første]
+  const strikeActor = (): 0 | 1 => {
+    const f = firstStriker ?? 0;
+    return strikes.length === 0 || strikes.length === 3 ? f : other(f);
   };
+  const strikesLeftForActor = () =>
+    strikes.length === 0 ? 1 : strikes.length < 3 ? 3 - strikes.length : 1;
 
-  const handleStageClick = (stageId: string) => {
-    if (step === "game-over") return;
-
-    if (step.includes("strike")) {
-      if (stageStates[stageId]) return;
-      setStageStates((prev) => ({ ...prev, [stageId]: "striked" }));
-      processStrike(stageId);
-    } else if (step === "winner-strike") {
-      if (stageStates[stageId]) return;
-      setStageStates((prev) => ({ ...prev, [stageId]: "banned" }));
-      processWinnerStrike(stageId);
-    } else if (step === "loser-pick") {
-      if (
-        stageStates[stageId] === "striked" ||
-        stageStates[stageId] === "banned"
-      )
-        return;
-      if (
-        lastWinner !== null &&
-        players[lastWinner].stageWins.includes(stageId)
-      ) {
-        return; // DSR forbudt
+  const handleStrike = (stageId: string) => {
+    const actor = strikeActor();
+    const newStrikes = [...strikes, stageId];
+    pushHistory();
+    setStrikes(newStrikes);
+    const name = config.stages.find((s) => s.id === stageId)?.name ?? stageId;
+    if (newStrikes.length < 4) {
+      const nextActor =
+        newStrikes.length === 3 ? firstStriker ?? 0 : other(firstStriker ?? 0);
+      const left =
+        newStrikes.length === 1 ? 2 : 1;
+      addLog(
+        `${players[actor].name} fjernede ${name}. ${players[nextActor].name} fjerner ${left} stage${left > 1 ? "s" : ""}.`
+      );
+    } else {
+      // Sidste starter tilbage = game 1 stage
+      const remaining = config.stages.find(
+        (s) => s.starter && !newStrikes.includes(s.id)
+      );
+      if (remaining) {
+        setPickedStage(remaining.id);
+        setPhase("reveal");
+        addLog(`1-2-1 færdig – ${remaining.name} er tilbage.`);
       }
-      setSelectedStage(stageId);
     }
   };
 
-  const processStrike = (stageId: string) => {
-    const strikerName = players[currentStriker as 0 | 1].name;
-
-    if (step === "game1-strike-p1") {
-      setStep("game1-strike-p2");
-      setStrikeCount(1);
+  const handleBan = (stageId: string) => {
+    if (lastWinner === null) return;
+    pushHistory();
+    const newBans = [...bans, stageId];
+    setBans(newBans);
+    const name = config.stages.find((s) => s.id === stageId)?.name ?? stageId;
+    if (newBans.length >= config.bans) {
+      setPhase("pick");
       addLog(
-        `${strikerName} fjernede ${getStageName(stageId)}. Nu skal modstanderen fjerne 2 stages.`
-      );
-    } else if (step === "game1-strike-p2") {
-      if (strikeCount === 1) {
-        setStrikeCount(2);
-        addLog(`${strikerName} fjernede ${getStageName(stageId)}. Vælg endnu en.`);
-      } else {
-        const nextStriker = currentStriker === 0 ? 1 : 0;
-        setCurrentStriker(nextStriker);
-        setStep("game1-strike-p1-2");
-        setStrikeCount(0);
-        addLog(
-          `${strikerName} fjernede ${getStageName(stageId)}. ${players[nextStriker].name} fjerner den sidste stage.`
-        );
-      }
-    } else if (step === "game1-strike-p1-2") {
-      setStep("loser-pick");
-      setSelectedStage(null);
-      addLog(
-        `${strikerName} fjernede ${getStageName(stageId)}. Vælg nu startstage ved at klikke på en af de resterende.`
-      );
-    }
-  };
-
-  const processWinnerStrike = (stageId: string) => {
-    const winnerName = players[lastWinner as 0 | 1].name;
-    const count =
-      Object.values(stageStates).filter((s) => s === "banned").length + 1;
-
-    if (count >= config.cpStrikes) {
-      setStep("loser-pick");
-      addLog(
-        `${winnerName} bannede ${getStageName(stageId)}. ${players[getOtherPlayer(lastWinner as 0 | 1)].name} vælger stage.`
+        `${players[lastWinner].name} bannede ${name}. ${players[other(lastWinner)].name} vælger nu stage (DSR aktiv).`
       );
     } else {
       addLog(
-        `${winnerName} bannede ${getStageName(stageId)} (${count}/${config.cpStrikes}).`
+        `${players[lastWinner].name} bannede ${name} (${newBans.length}/${config.bans}).`
       );
     }
   };
 
-  const confirmLoserPick = () => {
-    if (!selectedStage) return;
-    const loserIndex = getOtherPlayer(lastWinner as 0 | 1);
-    setStageStates((prev) => ({ ...prev, [selectedStage]: "picked" }));
-    setStep("report-winner");
-    addLog(
-      `${players[loserIndex].name} valgte ${getStageName(selectedStage)}. Rapporter hvem der vandt.`
-    );
+  const handlePick = (stageId: string) => {
+    pushHistory();
+    setPickedStage(stageId);
+    setPhase("reveal");
+    const name = config.stages.find((s) => s.id === stageId)?.name ?? stageId;
+    addLog(`${players[lastWinner !== null ? other(lastWinner) : 0].name} valgte ${name}.`);
   };
 
-  const handleReportWinner = (winner: 0 | 1) => {
-    const loser = getOtherPlayer(winner);
-    const pickedStage = selectedStage || "";
+  const confirmReveal = () => {
+    pushHistory();
+    setPhase("report");
+    addLog("Kamp i gang! Rapporter vinderen, når gamet er slut.");
+  };
 
-    const newPlayers = [...players];
-    newPlayers[winner].score += 1;
-    newPlayers[winner].stageWins.push(pickedStage);
-    setPlayers(newPlayers);
+  const reportWinner = (winner: 0 | 1) => {
+    pushHistory();
+    const stageId = pickedStage ?? "";
+    const stageName = config.stages.find((s) => s.id === stageId)?.name ?? stageId;
+    const next = players.map((p) => ({ ...p, stageWins: [...p.stageWins] }));
+    next[winner].score += 1;
+    if (stageId) next[winner].stageWins.push(stageId);
+    setPlayers(next);
     setLastWinner(winner);
+    setPickedStage(null);
 
-    if (newPlayers[winner].score >= 2) {
-      setStep("game-over");
-      addLog(`${newPlayers[winner].name} vandt kampen! Tillykke!`);
+    if (next[winner].score >= winsNeeded) {
+      setPhase("over");
+      addLog(`${next[winner].name} vinder serien ${next[winner].score}-${next[other(winner)].score}!`);
       return;
     }
 
     setCurrentGame((g) => g + 1);
-    setStageStates({});
-    setSelectedStage(null);
-    setStrikeCount(0);
-    setCurrentStriker(loser);
-    setStep("winner-strike");
+    setStrikes([]);
+    setBans([]);
+    setPhase("ban");
     addLog(
-      `${newPlayers[winner].name} vandt Game ${currentGame}. Vinderen banner ${config.cpStrikes} stage(s).`
+      `${next[winner].name} vandt Game ${currentGame} på ${stageName}. Vinderen banner ${config.bans} stage${config.bans > 1 ? "s" : ""}.`
     );
   };
 
-  const getStageName = (id: string) => {
-    return stages.find((s) => s.id === id)?.name || id;
+  const shareResult = () => {
+    const winner = players.find((p) => p.score >= winsNeeded);
+    if (!winner) return;
+    const text = `${winner.name} vandt ${config.label}-serien ${players[0].score}-${players[1].score} (${players[0].name} vs. ${players[1].name}) – stage strike via FGCNORD.DK`;
+    navigator.clipboard
+      .writeText(text)
+      .then(() => addLog("Resultat kopieret til udklipsholder."));
   };
 
-  const getOtherPlayer = (index: 0 | 1): 0 | 1 => (index === 0 ? 1 : 0);
+  // ---- afledt UI-tilstand ----
 
-  const canSelectStage = (stageId: string) => {
-    if (step === "game-over") return false;
-    if (step.includes("strike") || step === "winner-strike") {
-      return !stageStates[stageId];
+  const strikerIndex: 0 | 1 | null =
+    phase === "strike"
+      ? strikeActor()
+      : phase === "ban"
+        ? lastWinner
+        : phase === "pick" && lastWinner !== null
+          ? other(lastWinner)
+          : null;
+
+  const cardState = (stage: StrikeStage): CardState => {
+    if (phase === "strike") {
+      if (!stage.starter) return "locked";
+      if (strikes.includes(stage.id)) return "striked";
+      return "available";
     }
-    if (step === "loser-pick") {
-      if (
-        stageStates[stageId] === "striked" ||
-        stageStates[stageId] === "banned"
-      )
-        return false;
+    if (phase === "ban") {
+      if (bans.includes(stage.id)) return "banned";
+      return "available";
+    }
+    if (phase === "pick") {
+      if (bans.includes(stage.id)) return "banned";
       if (
         lastWinner !== null &&
-        players[lastWinner].stageWins.includes(stageId)
+        players[other(lastWinner)].stageWins.includes(stage.id)
       )
-        return false;
-      return true;
+        return "dsr";
+      return "available";
     }
-    return false;
+    if (phase === "reveal" && pickedStage === stage.id) return "picked";
+    if (phase === "report" && pickedStage === stage.id) return "picked";
+    return "idle";
   };
 
-  const statusText = () => {
-    switch (step) {
-      case "select-first":
+  const handleCardSelect = (stage: StrikeStage) => {
+    if (phase === "strike") handleStrike(stage.id);
+    else if (phase === "ban") handleBan(stage.id);
+    else if (phase === "pick") handlePick(stage.id);
+  };
+
+  const actionLabel =
+    phase === "strike"
+      ? "Strike"
+      : phase === "ban"
+        ? "Ban"
+        : phase === "pick"
+          ? "Vælg"
+          : "Stage";
+
+  const statusText = (): string => {
+    switch (phase) {
+      case "choose-first":
         return "Vælg hvem der striker først";
-      case "game1-strike-p1":
-        return `${players[currentStriker as 0 | 1].name} fjerner 1 stage`;
-      case "game1-strike-p2":
-        return `${players[currentStriker as 0 | 1].name} fjerner 2 stages`;
-      case "game1-strike-p1-2":
-        return `${players[currentStriker as 0 | 1].name} fjerner 1 stage`;
-      case "loser-pick":
-        return `${players[getOtherPlayer(lastWinner as 0 | 1)].name} vælger stage`;
-      case "winner-strike":
-        return `${players[lastWinner as 0 | 1].name} banner ${config.cpStrikes} stage(s)`;
-      case "report-winner":
-        return "Rapporter vinderen";
-      case "game-over":
-        return `${players.find((p) => p.score >= 2)?.name} vandt!`;
-      default:
-        return "";
+      case "strike": {
+        const a = strikeActor();
+        const n = strikesLeftForActor();
+        return `${players[a].name} striker – fjern ${n} stage${n > 1 ? "s" : ""} (1-2-1)`;
+      }
+      case "ban":
+        return lastWinner !== null
+          ? `${players[lastWinner].name} (vinder) banner ${config.bans - bans.length} stage${config.bans - bans.length > 1 ? "s" : ""}`
+          : "";
+      case "pick":
+        return lastWinner !== null
+          ? `${players[other(lastWinner)].name} (taber) vælger stage – DSR aktiv`
+          : "";
+      case "reveal":
+        return "Stage valgt – klar til kamp!";
+      case "report":
+        return "Hvem vandt gamet?";
+      case "over":
+        return `${players.find((p) => p.score >= winsNeeded)?.name ?? ""} vinder serien!`;
     }
   };
 
-  const shareResult = () => {
-    const winner = players.find((p) => p.score >= 2);
-    if (!winner) return;
-    const text = `${winner.name} vandt i ${config.label} Stage Strike!\n\n${players[0].name}: ${players[0].score} - ${players[1].name}: ${players[1].score}`;
-    navigator.clipboard.writeText(text).then(() => {
-      addLog("Resultat kopieret til udklipsholder.");
-    });
+  // Tastatur-navigation i stage-grid (piletaster)
+  const onGridKeyDown = (e: React.KeyboardEvent) => {
+    if (!["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown"].includes(e.key)) return;
+    const buttons = Array.from(
+      gridRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? []
+    );
+    const idx = buttons.indexOf(document.activeElement as HTMLButtonElement);
+    if (idx === -1) return;
+    e.preventDefault();
+    if (e.key === "ArrowRight") buttons[Math.min(idx + 1, buttons.length - 1)]?.focus();
+    if (e.key === "ArrowLeft") buttons[Math.max(idx - 1, 0)]?.focus();
+    if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      const current = buttons[idx];
+      const dir = e.key === "ArrowDown" ? 1 : -1;
+      let best: HTMLButtonElement | null = null;
+      let bestDist = Infinity;
+      for (const b of buttons) {
+        if (b === current) continue;
+        const rowDiff = (b.offsetTop - current.offsetTop) * dir;
+        if (rowDiff <= 2) continue;
+        const dist = Math.abs(b.offsetLeft - current.offsetLeft) + rowDiff * 0.25;
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = b;
+        }
+      }
+      best?.focus();
+    }
   };
+
+  const picked = config.stages.find((s) => s.id === pickedStage) ?? null;
 
   return (
-    <div className="min-h-screen bg-cream pb-20">
-      <PageHeader
-        eyebrow="Værktøj"
-        title="Stage Strike"
-        description="Følg DSR-reglerne og strike-flowet for Smash Ultimate og Melee. Vælg spil, spillernavne og lad værktøjet guide jer."
-      />
+    <div className="min-h-screen bg-coal pb-20 text-cream">
+      {/* Banner — nordlys over flydende stages */}
+      <div className="relative h-[260px] w-full overflow-hidden sm:h-[340px] md:h-[420px]">
+        <img
+          src="/stage-strike-banner.jpg"
+          alt="Nordlys over flydende platform-stages"
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-t from-coal via-coal/40 to-coal/10"
+        />
+        <div className="container-site relative flex h-full flex-col justify-end px-4 pb-8 sm:px-6 lg:px-8">
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="text-[13px] font-bold uppercase tracking-[0.18em] text-brick-soft"
+          >
+            Værktøj
+          </motion.p>
+          <motion.h1
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.08 }}
+            className="mt-2 font-display text-4xl uppercase text-cream drop-shadow-[0_2px_16px_rgba(0,0,0,0.6)] sm:text-5xl md:text-6xl"
+          >
+            Stage Strike
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.16 }}
+            className="mt-3 max-w-xl text-[15px] leading-relaxed text-cream/90 drop-shadow md:text-base"
+          >
+            Stream-overlay til stage striking i Smash Ultimate og Melee. Værktøjet
+            styrer 1-2-1, bans og DSR – I skal bare spille.
+          </motion.p>
+        </div>
+      </div>
 
       <div className="container-site px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid gap-8 lg:grid-cols-[1fr_320px]">
-          {/* Main area */}
+          {/* ---------- Hovedområde ---------- */}
           <div>
-            {/* Game selector */}
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex gap-2 rounded-xl border-2 border-ink bg-cream-dim p-1.5 shadow-poster-sm">
+            {/* Spil + format + handlinger */}
+            <div className="mb-6 flex flex-wrap items-center gap-3">
+              <div
+                role="group"
+                aria-label="Vælg spil"
+                className="flex gap-1 rounded-xl border-2 border-brick/30 bg-ink/60 p-1.5"
+              >
                 {(["ultimate", "melee"] as GameType[]).map((g) => (
                   <Button
                     key={g}
                     variant={game === g ? "default" : "ghost"}
-                    onClick={() => {
-                      setGame(g);
-                      reset(false);
-                    }}
+                    onClick={() => switchGame(g)}
                     className={cn(
-                      game === g && "bg-brick text-cream hover:bg-brick-soft"
+                      "min-h-[44px] font-bold",
+                      game === g
+                        ? "bg-brick text-coal hover:bg-brick-soft"
+                        : "text-cream/80 hover:text-cream"
                     )}
                   >
                     {GAME_CONFIG[g].label}
                   </Button>
                 ))}
               </div>
-              <Button
-                variant="outline"
-                onClick={() => reset(true)}
-                className="border-2 border-ink"
+
+              <div
+                role="group"
+                aria-label="Vælg format"
+                className="flex gap-1 rounded-xl border-2 border-brick/30 bg-ink/60 p-1.5"
               >
-                <RotateCcw className="mr-2 h-4 w-4" />
-                Nulstil
-              </Button>
-            </div>
+                {([3, 5] as const).map((b) => (
+                  <Button
+                    key={b}
+                    variant={bestOf === b ? "default" : "ghost"}
+                    onClick={() => setBestOf(b)}
+                    aria-pressed={bestOf === b}
+                    className={cn(
+                      "min-h-[44px] font-bold",
+                      bestOf === b
+                        ? "bg-brick text-coal hover:bg-brick-soft"
+                        : "text-cream/80 hover:text-cream"
+                    )}
+                  >
+                    Bo{b}
+                  </Button>
+                ))}
+              </div>
 
-            {/* Players */}
-            <div className="mb-6 grid gap-4 sm:grid-cols-2">
-              {players.map((player, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "rounded-xl border-2 border-ink bg-cream p-4 shadow-poster transition-all",
-                    (currentStriker === i || lastWinner === i) &&
-                      step !== "game-over" &&
-                      "ring-2 ring-brick ring-offset-2 ring-offset-cream"
-                  )}
+              <div className="ml-auto flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={undo}
+                  disabled={history.length === 0}
+                  className="min-h-[44px] border-cream/30 text-cream hover:bg-cream/10"
                 >
-                  <Input
-                    value={player.name}
-                    onChange={(e) => {
-                      const newPlayers = [...players];
-                      newPlayers[i].name = e.target.value;
-                      setPlayers(newPlayers);
-                    }}
-                    className="mb-2 border-2 border-ink bg-cream-dim font-heading text-lg font-bold"
-                  />
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-ink/60">Score</span>
-                    <span className="font-display text-3xl">{player.score}</span>
-                  </div>
-                </div>
-              ))}
+                  <Undo2 className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Fortryd
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={resetSeries}
+                  className="min-h-[44px] border-cream/30 text-cream hover:bg-cream/10"
+                >
+                  <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Nulstil
+                </Button>
+              </div>
             </div>
 
-            {/* Status banner */}
-            <div className="mb-6 rounded-xl border-2 border-ink bg-olive p-4 text-cream shadow-poster">
-              <div className="flex items-center justify-between">
+            {/* Spiller-kort med serie-score */}
+            <div className="mb-6 grid gap-4 sm:grid-cols-2">
+              {players.map((player, i) => {
+                const active = strikerIndex === i && phase !== "over" && phase !== "reveal";
+                return (
+                  <div
+                    key={i}
+                    className={cn(
+                      "rounded-xl border-2 bg-ink/60 p-4 transition-all",
+                      active
+                        ? "border-brick shadow-[0_0_24px_rgba(0,174,239,0.35)]"
+                        : "border-white/10"
+                    )}
+                  >
+                    <Input
+                      value={player.name}
+                      onChange={(e) => {
+                        const next = [...players];
+                        next[i] = { ...next[i], name: e.target.value };
+                        setPlayers(next);
+                      }}
+                      aria-label={`Navn på spiller ${i + 1}`}
+                      className="mb-3 min-h-[44px] border-white/20 bg-coal font-heading text-lg font-bold text-cream"
+                    />
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-cream/60">
+                        {active ? "Ved turen" : `Game-vundne`}
+                      </span>
+                      <span
+                        className="flex gap-1.5"
+                        aria-label={`${player.name} har vundet ${player.score} af ${winsNeeded} nødvendige games`}
+                      >
+                        {Array.from({ length: winsNeeded }).map((_, dot) => (
+                          <span
+                            key={dot}
+                            aria-hidden="true"
+                            className={cn(
+                              "h-3.5 w-3.5 rounded-full border-2 transition-all",
+                              dot < player.score
+                                ? "border-brick bg-brick shadow-[0_0_8px_rgba(0,174,239,0.8)]"
+                                : "border-cream/30 bg-transparent"
+                            )}
+                          />
+                        ))}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Statuslinje */}
+            <div
+              aria-live="polite"
+              role="status"
+              className="mb-6 rounded-xl border-2 border-brick/50 bg-gradient-to-r from-coal via-[#0d2a52] to-coal p-4 shadow-[0_0_30px_rgba(0,174,239,0.2)]"
+            >
+              <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="font-heading text-lg font-bold">{statusText()}</p>
-                  <p className="text-sm text-cream/70">
-                    Game {currentGame} · {GAME_CONFIG[game].label}
+                  <p className="font-heading text-lg font-bold text-cream sm:text-xl">
+                    {statusText()}
+                  </p>
+                  <p className="text-sm text-brick-soft">
+                    Game {currentGame} · Bo{bestOf} · {config.label}
                   </p>
                 </div>
-                {step === "game-over" && (
-                  <Trophy className="h-8 w-8 text-brick-soft" />
+                {phase === "over" ? (
+                  <Trophy className="h-9 w-9 shrink-0 text-brick" aria-hidden="true" />
+                ) : (
+                  <span className="hidden shrink-0 rounded-full border border-brick/40 px-3 py-1 text-xs font-bold uppercase tracking-widest text-brick-soft sm:block">
+                    Live
+                  </span>
                 )}
               </div>
             </div>
 
-            {/* First striker selection */}
+            {/* Kontekst-knapper */}
             <AnimatePresence mode="wait">
-              {step === "select-first" && (
+              {phase === "choose-first" && (
                 <motion.div
+                  key="choose-first"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="mb-6 grid gap-3 sm:grid-cols-2"
+                  className="mb-6 grid gap-3 sm:grid-cols-3"
                 >
-                  <Button size="lg" onClick={() => handleSelectFirst(0)}>
+                  <Button
+                    size="lg"
+                    onClick={() => selectFirstStriker(0)}
+                    className="min-h-[44px] bg-brick font-bold text-coal hover:bg-brick-soft"
+                  >
                     {players[0].name} striker først
                   </Button>
-                  <Button size="lg" onClick={() => handleSelectFirst(1)}>
+                  <Button
+                    size="lg"
+                    onClick={() => selectFirstStriker(1)}
+                    className="min-h-[44px] bg-brick font-bold text-coal hover:bg-brick-soft"
+                  >
                     {players[1].name} striker først
+                  </Button>
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    onClick={coinFlip}
+                    className="min-h-[44px] border-cream/30 font-bold text-cream hover:bg-cream/10"
+                  >
+                    <Dices className="mr-2 h-5 w-5" aria-hidden="true" />
+                    Plat eller krone
                   </Button>
                 </motion.div>
               )}
 
-              {/* Winner report */}
-              {step === "report-winner" && selectedStage && (
+              {phase === "report" && (
                 <motion.div
+                  key="report"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className="mb-6 grid gap-3 sm:grid-cols-2"
                 >
-                  <Button
-                    size="lg"
-                    className="bg-brick text-cream hover:bg-brick-soft"
-                    onClick={() => handleReportWinner(0)}
-                  >
-                    <Crown className="mr-2 h-4 w-4" />
-                    {players[0].name} vandt
-                  </Button>
-                  <Button
-                    size="lg"
-                    className="bg-brick text-cream hover:bg-brick-soft"
-                    onClick={() => handleReportWinner(1)}
-                  >
-                    <Crown className="mr-2 h-4 w-4" />
-                    {players[1].name} vandt
-                  </Button>
+                  {([0, 1] as const).map((i) => (
+                    <Button
+                      key={i}
+                      size="lg"
+                      onClick={() => reportWinner(i)}
+                      className="min-h-[44px] bg-brick font-bold text-coal hover:bg-brick-soft"
+                    >
+                      <Crown className="mr-2 h-5 w-5" aria-hidden="true" />
+                      {players[i].name} vandt
+                    </Button>
+                  ))}
                 </motion.div>
               )}
 
-              {/* Loser pick confirm */}
-              {step === "loser-pick" && selectedStage && (
+              {phase === "over" && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="mb-6"
-                >
-                  <Button
-                    size="lg"
-                    className="w-full bg-brick text-cream hover:bg-brick-soft"
-                    onClick={confirmLoserPick}
-                  >
-                    <Swords className="mr-2 h-4 w-4" />
-                    Bekræft valg: {getStageName(selectedStage)}
-                  </Button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* Game over summary */}
-            <AnimatePresence>
-              {step === "game-over" && (
-                <motion.div
+                  key="over"
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="mb-6 rounded-xl border-2 border-ink bg-cream-dim p-6 shadow-poster"
+                  className="mb-6 rounded-xl border-2 border-brick bg-ink/70 p-6 text-center shadow-[0_0_40px_rgba(0,174,239,0.35)]"
                 >
-                  <h3 className="font-display text-2xl">
-                    {players.find((p) => p.score >= 2)?.name} vinder!
+                  <h3 className="font-display text-2xl text-cream sm:text-3xl">
+                    {players.find((p) => p.score >= winsNeeded)?.name} vinder serien!
                   </h3>
-                  <p className="mt-1 text-ink/70">
-                    Slutresultat: {players[0].name} {players[0].score} -{" "}
+                  <p className="mt-1 text-cream/70">
+                    Slutresultat: {players[0].name} {players[0].score} –{" "}
                     {players[1].score} {players[1].name}
                   </p>
-                  <Button
-                    variant="outline"
-                    className="mt-4 border-ink"
-                    onClick={shareResult}
-                  >
-                    <Share2 className="mr-2 h-4 w-4" />
-                    Kopier resultat
-                  </Button>
+                  <div className="mt-4 flex flex-wrap justify-center gap-3">
+                    <Button
+                      variant="outline"
+                      onClick={shareResult}
+                      className="min-h-[44px] border-cream/30 text-cream hover:bg-cream/10"
+                    >
+                      <Share2 className="mr-2 h-4 w-4" aria-hidden="true" />
+                      Kopier resultat
+                    </Button>
+                    <Button
+                      onClick={resetSeries}
+                      className="min-h-[44px] bg-brick font-bold text-coal hover:bg-brick-soft"
+                    >
+                      <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
+                      Ny serie
+                    </Button>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
 
-            {/* Stage grid */}
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-              {stages.map((stage) => {
-                const state = stageStates[stage.id];
-                const isSelected = selectedStage === stage.id;
-                const clickable = canSelectStage(stage.id);
+            {/* Stage-grid */}
+            <div
+              ref={gridRef}
+              role="group"
+              aria-label="Stages"
+              onKeyDown={onGridKeyDown}
+              className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4"
+            >
+              {config.stages.map((stage) => (
+                <StageCard
+                  key={stage.id}
+                  stage={stage}
+                  state={cardState(stage)}
+                  actionLabel={actionLabel}
+                  onSelect={() => handleCardSelect(stage)}
+                />
+              ))}
+            </div>
 
-                return (
-                  <motion.button
-                    key={stage.id}
-                    whileHover={clickable ? { scale: 0.97 } : {}}
-                    whileTap={clickable ? { scale: 0.95 } : {}}
-                    onClick={() => handleStageClick(stage.id)}
-                    disabled={!clickable}
-                    className={cn(
-                      "relative aspect-video overflow-hidden rounded-xl border-2 border-ink text-left shadow-poster transition-all",
-                      state === "striked" && "grayscale opacity-50",
-                      state === "banned" && "grayscale opacity-40",
-                      (state === "picked" || isSelected) &&
-                        "ring-4 ring-brick ring-offset-2 ring-offset-cream",
-                      !clickable &&
-                        !state &&
-                        !isSelected &&
-                        "cursor-not-allowed opacity-60"
-                    )}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-cream-dim to-cream" />
-                    <div className="relative flex h-full flex-col justify-between p-3">
-                      <span className="font-heading text-sm font-bold leading-tight text-ink sm:text-base">
-                        {stage.name}
-                      </span>
-                      {state === "striked" && (
-                        <Badge variant="secondary" className="w-fit">
-                          Fjernet
-                        </Badge>
-                      )}
-                      {state === "banned" && (
-                        <Badge variant="coal" className="w-fit">
-                          Banned
-                        </Badge>
-                      )}
-                      {state === "picked" && (
-                        <Badge variant="default" className="w-fit">
-                          Valgt
-                        </Badge>
-                      )}
-                    </div>
-                  </motion.button>
-                );
-              })}
+            {/* Regel-accordion */}
+            <div className="mt-10">
+              <h2 className="mb-4 font-heading text-xl font-bold text-cream">
+                Sådan fungerer det
+              </h2>
+              <AccordionItem title="Game 1: 1-2-1 strike">
+                <p>
+                  Kun de 5 starter-stages er i spil i game 1. Spilleren der
+                  striker først fjerner <strong>1</strong> stage, modstanderen
+                  fjerner <strong>2</strong>, og den første fjerner den sidste{" "}
+                  <strong>1</strong>. Den tilbageværende stage er game 1.
+                </p>
+              </AccordionItem>
+              <div className="mt-3">
+                <AccordionItem title="Counter-pick: vinderen banner">
+                  <p>
+                    Efter hvert game banner vinderen{" "}
+                    <strong>{config.bans} stage{config.bans > 1 ? "s" : ""}</strong>{" "}
+                    fra hele listen (inkl. counterpicks), og taberen vælger frit
+                    blandt resten.
+                  </p>
+                </AccordionItem>
+              </div>
+              <div className="mt-3">
+                <AccordionItem title="DSR – Dave's Stupid Rule">
+                  <p>
+                    Du må <strong>ikke</strong> counterpicke til en stage, du
+                    selv allerede har vundet på i serien. Stages spærret af DSR
+                    er markeret med en oliven lås i listen herover.
+                  </p>
+                </AccordionItem>
+              </div>
             </div>
           </div>
 
-          {/* Sidebar */}
+          {/* ---------- Sidebar ---------- */}
           <aside className="space-y-6">
-            <div className="rounded-xl border-2 border-ink bg-cream p-5 shadow-poster">
-              <h3 className="mb-4 font-heading text-lg font-bold">Trin-for-trin</h3>
-              <ol className="space-y-3 text-sm">
-                <StepItem active={step === "select-first"} step={1}>
+            <div className="rounded-xl border-2 border-brick/30 bg-ink/60 p-5">
+              <h3 className="mb-4 font-heading text-lg font-bold text-cream">
+                Trin-for-trin
+              </h3>
+              <ol className="space-y-3 text-sm text-cream/80">
+                <StepItem active={phase === "choose-first"} done={firstStriker !== null} step={1}>
                   Vælg hvem der striker først
                 </StepItem>
-                <StepItem
-                  active={step.startsWith("game1-strike")}
-                  step={2}
-                >
-                  Game 1: Strike 1-2-1
+                <StepItem active={phase === "strike"} done={currentGame > 1 || phase !== "strike" && firstStriker !== null && strikes.length >= 4} step={2}>
+                  Game 1: strike 1-2-1
                 </StepItem>
-                <StepItem
-                  active={step === "loser-pick" && currentGame === 1}
-                  step={3}
-                >
-                  Taber vælger startstage
+                <StepItem active={phase === "report" && currentGame === 1} done={currentGame > 1} step={3}>
+                  Spil game 1 & rapporter vinder
                 </StepItem>
-                <StepItem active={step === "report-winner"} step={4}>
-                  Rapporter vinder
+                <StepItem active={phase === "ban"} step={4}>
+                  Vinder banner {config.bans} stage{config.bans > 1 ? "s" : ""}
                 </StepItem>
-                <StepItem active={step === "winner-strike"} step={5}>
-                  Vinder banner {config.cpStrikes} CP stage(s)
+                <StepItem active={phase === "pick"} step={5}>
+                  Taber vælger stage (DSR)
                 </StepItem>
-                <StepItem
-                  active={step === "loser-pick" && currentGame > 1}
-                  step={6}
-                >
-                  Taber vælger (DSR forbudt)
+                <StepItem active={phase === "over"} step={6}>
+                  Først til {winsNeeded} vinder serien
                 </StepItem>
               </ol>
             </div>
 
-            <div className="rounded-xl border-2 border-ink bg-cream p-5 shadow-poster">
-              <h3 className="mb-4 font-heading text-lg font-bold">DSR tracking</h3>
+            <div className="rounded-xl border-2 border-brick/30 bg-ink/60 p-5">
+              <h3 className="mb-4 font-heading text-lg font-bold text-cream">
+                DSR-tracking
+              </h3>
               <div className="space-y-4 text-sm">
                 {players.map((player, i) => (
                   <div key={i}>
-                    <p className="font-semibold">{player.name}</p>
+                    <p className="font-semibold text-cream">{player.name}</p>
                     {player.stageWins.length === 0 ? (
-                      <p className="text-ink/50">Ingen stage-sejre endnu</p>
+                      <p className="text-cream/50">Ingen stage-sejre endnu</p>
                     ) : (
-                      <ul className="mt-1 list-disc pl-4 text-ink/70">
-                        {player.stageWins.map((stageId, idx) => (
-                          <li key={idx}>{getStageName(stageId)}</li>
+                      <ul className="mt-1 list-disc pl-4 text-cream/70">
+                        {player.stageWins.map((id, idx) => (
+                          <li key={idx}>
+                            {config.stages.find((s) => s.id === id)?.name ?? id}
+                          </li>
                         ))}
                       </ul>
                     )}
@@ -545,9 +770,9 @@ export function StageStrike() {
               </div>
             </div>
 
-            <div className="rounded-xl border-2 border-ink bg-coal p-5 text-cream shadow-poster">
-              <h3 className="mb-2 font-heading text-lg font-bold">Log</h3>
-              <div className="max-h-64 space-y-2 overflow-y-auto text-xs text-cream/70">
+            <div className="rounded-xl border-2 border-white/10 bg-ink/80 p-5">
+              <h3 className="mb-2 font-heading text-lg font-bold text-cream">Log</h3>
+              <div className="max-h-64 space-y-2 overflow-y-auto text-xs text-cream/60">
                 {log.map((entry, i) => (
                   <p key={i}>• {entry}</p>
                 ))}
@@ -556,27 +781,51 @@ export function StageStrike() {
           </aside>
         </div>
       </div>
+
+      {/* Reveal-overlay */}
+      <AnimatePresence>
+        {phase === "reveal" && picked && (
+          <RevealOverlay
+            stage={picked}
+            gameNumber={currentGame}
+            canReselect={currentGame > 1}
+            onConfirm={confirmReveal}
+            onReselect={() => {
+              pushHistory();
+              setPickedStage(null);
+              setPhase("pick");
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
 function StepItem({
   active,
+  done,
   step,
   children,
 }: {
   active: boolean;
+  done?: boolean;
   step: number;
   children: React.ReactNode;
 }) {
   return (
     <li
       className={cn(
-        "flex gap-2",
-        active && "font-bold text-brick"
+        "flex items-center gap-2",
+        active && "font-bold text-brick-soft",
+        done && "text-cream/40 line-through"
       )}
     >
-      <span className="font-display">{step}.</span>
+      {done ? (
+        <CheckCircle2 className="h-4 w-4 shrink-0 text-brick" aria-hidden="true" />
+      ) : (
+        <span className="font-display">{step}.</span>
+      )}
       {children}
     </li>
   );

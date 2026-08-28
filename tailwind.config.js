@@ -5,13 +5,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        cream: "#F7F1E6",
-        "cream-dim": "#EFE6D5",
-        ink: "#141413",
+        cream: "#F4F8FB",
+        "cream-dim": "#E4EDF5",
+        ink: "#0B1526",
         olive: "#51512A",
-        brick: "#A84434",
-        "brick-soft": "#C96A58",
-        coal: "#1A1A18",
+        brick: "#00AEEF",
+        "brick-soft": "#4FC3F7",
+        coal: "#0A1E3C",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

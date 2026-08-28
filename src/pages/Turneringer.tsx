@@ -1,297 +1,341 @@
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertCircle,
+  ArrowUpRight,
   CalendarDays,
-  CalendarIcon,
-  CalendarRange,
-  Clock,
-  Filter,
-  Gamepad2,
-  Globe,
+  CalendarPlus,
+  CalendarX2,
   LayoutGrid,
   List,
   MapPin,
   RotateCcw,
-  SearchX,
   Users,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
-import { AddToCalendarButton, EventCard } from "@/components/EventCard";
+import { AddToCalendarButton } from "@/components/EventCard";
 import { PageHeader } from "@/components/PageHeader";
 import { CTASection } from "@/components/CTASection";
+import { WaveDivider } from "@/components/WaveDivider";
+import { Countdown } from "@/components/turneringer/Countdown";
+import { SelfServeSteps } from "@/components/turneringer/SelfServeSteps";
+import { TurneringCard } from "@/components/turneringer/TurneringCard";
+import {
+  gameChipClasses,
+  gameDotColors,
+  gameLabels,
+  isPastEvent,
+} from "@/components/turneringer/gameStyles";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { allEvents } from "@/data/events";
 import { fetchCalendarEvents } from "@/lib/calendar";
+import { cn } from "@/lib/utils";
 import type { FgcEvent } from "@/types";
 
-const gameOptions = [
+const gameFilters = [
   { value: "all", label: "Alle spil" },
   { value: "melee", label: "Melee" },
   { value: "ultimate", label: "Ultimate" },
   { value: "roa2", label: "Rivals 2" },
-];
+] as const;
 
-const dateOptions = [
+const dateFilters = [
   { value: "upcoming", label: "Kommende" },
   { value: "all", label: "Alle datoer" },
-];
+] as const;
 
-const formatOptions = [
+const formatFilters = [
   { value: "all", label: "Alle formater" },
   { value: "offline", label: "Offline" },
   { value: "online", label: "Online" },
-];
+] as const;
 
-const gameBadgeClasses: Record<string, string> = {
-  melee: "bg-brick/12 text-brick border-brick/30",
-  ultimate: "bg-olive/12 text-olive border-olive/30",
-  roa2: "bg-brick-soft/12 text-brick border-brick/30",
-  all: "bg-cream-dim text-ink border-ink/20",
-};
-
-const gameIcons: Record<string, string> = {
-  melee: "🦊",
-  ultimate: "🥊",
-  roa2: "⚡",
-  all: "🎮",
-};
+type LoadState = "loading" | "ready" | "error";
 
 export function Turneringer() {
   const [events, setEvents] = useState<FgcEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadState, setLoadState] = useState<LoadState>("loading");
   const [error, setError] = useState<string | null>(null);
   const [source, setSource] = useState<"google" | "fallback">("fallback");
 
-  const [gameFilter, setGameFilter] = useState("all");
-  const [dateFilter, setDateFilter] = useState("upcoming");
-  const [formatFilter, setFormatFilter] = useState("all");
+  const [gameFilter, setGameFilter] = useState<string>("all");
+  const [dateFilter, setDateFilter] = useState<string>("upcoming");
+  const [formatFilter, setFormatFilter] = useState<string>("all");
   const [view, setView] = useState<"grid" | "list">("grid");
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      setLoading(true);
-      setError(null);
-      try {
-        const result = await fetchCalendarEvents();
-        if (!cancelled) {
-          setEvents(result.events);
-          setSource(result.source);
-          if (result.error) {
-            setError(result.error);
-          }
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setEvents(allEvents);
-          setSource("fallback");
-          setError(err instanceof Error ? err.message : "Fejl ved indlæsning");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+  const load = useCallback(async (signal?: { cancelled: boolean }) => {
+    const isCancelled = () => signal?.cancelled ?? false;
+    setLoadState("loading");
+    setError(null);
+    try {
+      const result = await fetchCalendarEvents();
+      if (isCancelled()) return;
+      setEvents(result.events);
+      setSource(result.source);
+      setError(result.error ?? null);
+      setLoadState("ready");
+    } catch (err) {
+      if (isCancelled()) return;
+      setEvents(allEvents);
+      setSource("fallback");
+      setError(err instanceof Error ? err.message : "Fejl ved indlæsning");
+      setLoadState("error");
     }
-
-    load();
-
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
+  useEffect(() => {
+    const signal = { cancelled: false };
+    void load(signal);
+    return () => {
+      signal.cancelled = true;
+    };
+  }, [load]);
+
   const filteredEvents = useMemo(() => {
-    const now = new Date();
-
-    return events.filter((event) => {
-      const eventDate = new Date(event.date);
-
-      if (gameFilter !== "all" && event.game !== gameFilter) return false;
-      if (formatFilter !== "all" && event.format !== formatFilter) return false;
-      if (dateFilter === "upcoming" && eventDate < now) return false;
-
-      return true;
-    });
+    return events
+      .filter((event) => {
+        if (gameFilter !== "all" && event.game !== gameFilter) return false;
+        if (formatFilter !== "all" && event.format !== formatFilter) return false;
+        if (dateFilter === "upcoming" && isPastEvent(event)) return false;
+        return true;
+      })
+      .sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+      );
   }, [events, gameFilter, dateFilter, formatFilter]);
 
+  const nextEvent = useMemo(
+    () =>
+      events
+        .filter((e) => !isPastEvent(e))
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0] ?? null,
+    [events],
+  );
+
   const stats = useMemo(() => {
-    const now = new Date();
-    const upcoming = events.filter((e) => new Date(e.date) >= now).length;
-    const offline = events.filter((e) => e.format === "offline").length;
+    const upcoming = events.filter((e) => !isPastEvent(e)).length;
+    const offline = events.filter((e) => e.format !== "online").length;
     const online = events.filter((e) => e.format === "online").length;
     return { upcoming, offline, online };
   }, [events]);
 
-  const activeFiltersCount = useMemo(() => {
-    return [gameFilter !== "all", dateFilter !== "upcoming", formatFilter !== "all"].filter(
-      Boolean
-    ).length;
-  }, [gameFilter, dateFilter, formatFilter]);
-
   const resetFilters = () => {
     setGameFilter("all");
-    setDateFilter("upcoming");
+    setDateFilter("all");
     setFormatFilter("all");
   };
+
+  const filtersActive =
+    gameFilter !== "all" || dateFilter !== "upcoming" || formatFilter !== "all";
+  const loading = loadState === "loading";
 
   return (
     <>
       <PageHeader
         eyebrow="Turneringer"
         title="Eventkalender"
-        description="Find kommende turneringer, weeklies og sociale events fra FGC Nord. Filtrer efter spil, format og dato."
+        description="Weeklys, monthlys og majors i Nordjylland. Alle events er selvbetjente — tilmeld dig, check ind og indberet selv dine kampe på start.gg."
       >
-        {/* Stats */}
-        <div className="mt-8 grid grid-cols-3 gap-3 sm:gap-4">
+        <div className="mt-6 grid grid-cols-3 gap-3 sm:gap-4">
           <StatCard
+            icon={<CalendarDays className="h-5 w-5 sm:h-6 sm:w-6" />}
             value={stats.upcoming}
             label="Kommende"
-            icon={<CalendarDays className="h-5 w-5 sm:h-6 sm:w-6" />}
-            accent="brick"
+            iconClass="text-brick"
           />
           <StatCard
+            icon={<MapPin className="h-5 w-5 sm:h-6 sm:w-6" />}
             value={stats.offline}
             label="Offline"
-            icon={<MapPin className="h-5 w-5 sm:h-6 sm:w-6" />}
-            accent="olive"
+            iconClass="text-olive"
           />
           <StatCard
+            icon={<Users className="h-5 w-5 sm:h-6 sm:w-6" />}
             value={stats.online}
             label="Online"
-            icon={<Globe className="h-5 w-5 sm:h-6 sm:w-6" />}
-            accent="brick-soft"
+            iconClass="text-brick-soft"
           />
         </div>
       </PageHeader>
 
       <section className="section-padding bg-cream">
         <div className="container-site px-4 sm:px-6 lg:px-8">
-          {/* Filters */}
-          <div className="mb-6 overflow-hidden rounded-2xl border-[3px] border-ink bg-cream-dim shadow-poster sm:mb-8">
-            <div className="flex items-center gap-2 border-b-2 border-ink/10 bg-ink p-3 sm:p-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brick text-cream">
-                <Filter className="h-4 w-4" />
-              </div>
-              <span className="font-heading font-bold text-cream">Filtrer events</span>
-              {activeFiltersCount > 0 && (
-                <Badge variant="default" className="ml-auto">
-                  {activeFiltersCount} aktiv{activeFiltersCount === 1 ? "t" : "e"} filter
-                  {activeFiltersCount === 1 ? "" : "e"}
-                </Badge>
-              )}
+          {/* Countdown til næste event */}
+          {!loading && nextEvent && (
+            <div className="mb-8">
+              <Countdown event={nextEvent} />
             </div>
+          )}
 
-            <div className="p-4 sm:p-5">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
-                <FilterSelect
-                  label="Spil"
-                  icon={<Gamepad2 className="h-4 w-4" />}
-                  value={gameFilter}
-                  onChange={setGameFilter}
-                  options={gameOptions}
-                />
-                <FilterSelect
-                  label="Dato"
-                  icon={<CalendarRange className="h-4 w-4" />}
-                  value={dateFilter}
-                  onChange={setDateFilter}
-                  options={dateOptions}
-                />
-                <FilterSelect
-                  label="Format"
-                  icon={<Users className="h-4 w-4" />}
-                  value={formatFilter}
-                  onChange={setFormatFilter}
-                  options={formatOptions}
-                />
-
-                <div className="flex items-end">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full border-2 border-ink bg-cream hover:bg-ink hover:text-cream"
-                    onClick={resetFilters}
-                    disabled={activeFiltersCount === 0}
+          {/* Filtre */}
+          <div
+            className="mb-6 rounded-xl border-2 border-ink bg-cream-dim p-4 shadow-poster sm:mb-8 sm:p-5"
+            role="group"
+            aria-label="Filtrer events"
+          >
+            <div className="flex flex-col gap-5">
+              <FilterRow label="Spil">
+                {gameFilters.map((option) => (
+                  <FilterChip
+                    key={option.value}
+                    active={gameFilter === option.value}
+                    onClick={() => setGameFilter(option.value)}
+                    dot={gameDotColors[option.value]}
                   >
-                    <RotateCcw className="mr-2 h-4 w-4" />
-                    Nulstil filtre
-                  </Button>
-                </div>
+                    {option.label}
+                  </FilterChip>
+                ))}
+              </FilterRow>
+              <div className="flex flex-wrap gap-x-8 gap-y-5">
+                <FilterRow label="Dato">
+                  {dateFilters.map((option) => (
+                    <FilterChip
+                      key={option.value}
+                      active={dateFilter === option.value}
+                      onClick={() => setDateFilter(option.value)}
+                    >
+                      {option.label}
+                    </FilterChip>
+                  ))}
+                </FilterRow>
+                <FilterRow label="Format">
+                  {formatFilters.map((option) => (
+                    <FilterChip
+                      key={option.value}
+                      active={formatFilter === option.value}
+                      onClick={() => setFormatFilter(option.value)}
+                    >
+                      {option.label}
+                    </FilterChip>
+                  ))}
+                </FilterRow>
               </div>
+
+              {filtersActive && (
+                <button
+                  type="button"
+                  onClick={resetFilters}
+                  className="inline-flex w-fit items-center gap-1.5 rounded-full border-2 border-ink bg-cream px-3 py-1.5 text-xs font-bold uppercase tracking-widest text-ink transition-all hover:-translate-y-0.5 hover:bg-ink hover:text-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brick"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
+                  Nulstil filtre
+                </button>
+              )}
             </div>
           </div>
 
           {/* Toolbar */}
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 items-center gap-2 rounded-full border-2 border-ink bg-cream px-4 shadow-poster-sm">
-                <Clock className="h-4 w-4 text-olive" />
-                <p className="text-sm font-semibold text-ink">
-                  {loading
-                    ? "Henter events..."
-                    : `${filteredEvents.length} event${filteredEvents.length !== 1 ? "s" : ""} fundet`}
-                </p>
-              </div>
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-ink/60" aria-live="polite">
+              {loading
+                ? "Henter events..."
+                : `${filteredEvents.length} event${filteredEvents.length !== 1 ? "s" : ""} fundet`}
+            </p>
+            <div className="flex items-center gap-2">
               <Badge variant={source === "google" ? "secondary" : "outline"}>
                 {source === "google" ? "Google Calendar" : "Demo-data"}
               </Badge>
-            </div>
-
-            <div className="flex items-center gap-2 rounded-full border-2 border-ink bg-cream p-1 shadow-poster-sm">
-              <ViewToggleButton active={view === "grid"} onClick={() => setView("grid")} ariaLabel="Grid visning">
-                <LayoutGrid className="h-4 w-4" />
-              </ViewToggleButton>
-              <ViewToggleButton active={view === "list"} onClick={() => setView("list")} ariaLabel="Liste visning">
-                <List className="h-4 w-4" />
-              </ViewToggleButton>
+              <div
+                className="flex rounded-md border-2 border-ink bg-cream p-0.5 shadow-poster-sm"
+                role="group"
+                aria-label="Vælg visning"
+              >
+                <Button
+                  type="button"
+                  variant={view === "grid" ? "default" : "ghost"}
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setView("grid")}
+                  aria-label="Grid-visning"
+                  aria-pressed={view === "grid"}
+                >
+                  <LayoutGrid className="h-4 w-4" aria-hidden="true" />
+                </Button>
+                <Button
+                  type="button"
+                  variant={view === "list" ? "default" : "ghost"}
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setView("list")}
+                  aria-label="Listevisning"
+                  aria-pressed={view === "list"}
+                >
+                  <List className="h-4 w-4" aria-hidden="true" />
+                </Button>
+              </div>
             </div>
           </div>
 
-          {/* Error alert */}
-          {error && source === "fallback" && (
+          {/* Fejltilstand */}
+          {loadState === "error" && (
+            <Alert className="mb-6" variant="olive" role="alert">
+              <AlertCircle className="h-4 w-4" aria-hidden="true" />
+              <AlertTitle>Kunne ikke hente kalenderen</AlertTitle>
+              <AlertDescription className="flex flex-col gap-3">
+                <span>
+                  Noget gik galt ved indlæsning af events
+                  {error ? `: ${error}` : "."} Vi viser senest kendte
+                  event-data i stedet.
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-fit border-ink"
+                  onClick={() => void load()}
+                >
+                  <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                  Prøv igen
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Demo-data info */}
+          {loadState === "ready" && error && source === "fallback" && (
             <Alert className="mb-6" variant="olive">
-              <AlertCircle className="h-4 w-4" />
+              <AlertCircle className="h-4 w-4" aria-hidden="true" />
               <AlertTitle>Kalender ikke tilsluttet</AlertTitle>
               <AlertDescription>
-                Vi kunne ikke hente events fra Google Calendar, så vi viser demo-data i stedet. Sæt
-                VITE_GOOGLE_CALENDAR_ID og VITE_GOOGLE_CALENDAR_API_KEY i din .env-fil for at hente
-                rigtige events.
+                Vi kunne ikke hente live-events fra Google Calendar, så vi viser
+                planlagte events i stedet. Tilmelding sker altid via{" "}
+                <a
+                  href="https://start.gg/fgcnord"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-bold underline decoration-2 underline-offset-2"
+                >
+                  start.gg/fgcnord
+                </a>
+                .
               </AlertDescription>
             </Alert>
           )}
 
           {/* Loading skeletons */}
           {loading && (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div
+              className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
+              aria-busy="true"
+              aria-label="Indlæser events"
+            >
               {Array.from({ length: 6 }).map((_, i) => (
                 <div
                   key={i}
-                  className="card-poster flex h-full flex-col p-6"
+                  className="rounded-2xl border-[3px] border-ink bg-cream p-5 shadow-poster"
                 >
-                  <div className="flex items-start gap-4">
-                    <Skeleton className="h-[68px] w-[68px] rounded-xl" />
+                  <div className="flex gap-4">
+                    <Skeleton className="h-16 w-16 rounded-xl" />
                     <div className="flex-1 space-y-2 pt-1">
                       <Skeleton className="h-3 w-24" />
-                      <Skeleton className="h-6 w-full" />
+                      <Skeleton className="h-5 w-full" />
                     </div>
                   </div>
-                  <div className="mt-5 flex gap-2">
-                    <Skeleton className="h-7 w-20 rounded-full" />
-                    <Skeleton className="h-7 w-24 rounded-full" />
-                  </div>
-                  <Skeleton className="mt-4 h-4 w-40" />
-                  <Skeleton className="mt-auto h-11 w-full rounded-full" />
+                  <Skeleton className="mt-4 h-3 w-32" />
+                  <Skeleton className="mt-3 h-16 w-full" />
+                  <Skeleton className="mt-4 h-10 w-full rounded-full" />
                 </div>
               ))}
             </div>
@@ -302,9 +346,9 @@ export function Turneringer() {
             {!loading && (
               <motion.div
                 key={view}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
               >
                 {filteredEvents.length > 0 ? (
@@ -315,21 +359,41 @@ export function Turneringer() {
                           key={event.id}
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.05 }}
+                          transition={{ delay: Math.min(i, 8) * 0.05 }}
+                          className="min-w-0"
                         >
-                          <EventCard event={event} />
+                          <TurneringCard event={event} />
                         </motion.div>
                       ))}
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <ul className="space-y-4">
                       {filteredEvents.map((event, i) => (
                         <EventListItem key={event.id} event={event} index={i} />
                       ))}
-                    </div>
+                    </ul>
                   )
                 ) : (
-                  <EmptyState onReset={resetFilters} />
+                  <div className="rounded-xl border-2 border-ink bg-cream-dim p-8 text-center shadow-poster sm:p-12">
+                    <CalendarX2
+                      className="mx-auto mb-4 h-12 w-12 text-ink/30"
+                      aria-hidden="true"
+                    />
+                    <h2 className="font-heading text-xl font-bold">
+                      Ingen events fundet
+                    </h2>
+                    <p className="mt-2 text-ink/60">
+                      Prøv at nulstille filtrene for at se flere events.
+                    </p>
+                    <Button
+                      variant="outline"
+                      className="mt-4 border-ink"
+                      onClick={resetFilters}
+                    >
+                      <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                      Nulstil filtre
+                    </Button>
+                  </div>
                 )}
               </motion.div>
             )}
@@ -337,168 +401,131 @@ export function Turneringer() {
         </div>
       </section>
 
+      <WaveDivider fill="#0B1526" className="bg-cream" />
+
+      {/* Selvbetjent format — 4 trin */}
+      <SelfServeSteps />
+
       <CTASection />
     </>
   );
 }
 
 function StatCard({
+  icon,
   value,
   label,
-  icon,
-  accent,
+  iconClass,
 }: {
+  icon: React.ReactNode;
   value: number;
   label: string;
-  icon: React.ReactNode;
-  accent: "brick" | "olive" | "brick-soft";
+  iconClass: string;
 }) {
-  const accentClasses = {
-    brick: "border-brick bg-brick text-cream",
-    olive: "border-olive bg-olive text-cream",
-    "brick-soft": "border-brick-soft bg-brick-soft text-cream",
-  };
-
   return (
-    <div className="card-poster group relative overflow-hidden bg-cream p-3 text-center transition-all hover:-translate-y-1 hover:shadow-poster-lg sm:p-4">
-      <div
-        className={`mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full border-2 ${accentClasses[accent]} shadow-poster-sm transition-transform group-hover:scale-110 sm:mb-3 sm:h-12 sm:w-12`}
-      >
-        {icon}
-      </div>
-      <p className="font-display text-2xl leading-none text-ink sm:text-3xl">{value}</p>
-      <p className="mt-1 text-[10px] font-bold uppercase tracking-wider text-ink/60 sm:text-xs">
-        {label}
-      </p>
+    <div className="rounded-xl border-2 border-ink bg-cream p-3 text-center shadow-poster sm:p-4">
+      <span className={cn("mx-auto mb-1 block w-fit", iconClass)}>{icon}</span>
+      <p className="font-display text-xl sm:text-2xl">{value}</p>
+      <p className="text-[10px] text-ink/60 sm:text-xs">{label}</p>
     </div>
   );
 }
 
-function FilterSelect({
+function FilterRow({
   label,
-  icon,
-  value,
-  onChange,
-  options,
+  children,
 }: {
   label: string;
-  icon: React.ReactNode;
-  value: string;
-  onChange: (value: string) => void;
-  options: { value: string; label: string }[];
+  children: React.ReactNode;
 }) {
   return (
-    <div className="w-full">
-      <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-ink/70">
-        {icon}
-        {label}
-      </label>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {options.map((option) => (
-            <SelectItem key={option.value} value={option.value}>
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-xs font-bold uppercase tracking-widest text-ink/60">
+        {label}:
+      </span>
+      <div className="flex flex-wrap gap-2">{children}</div>
     </div>
   );
 }
 
-function ViewToggleButton({
+function FilterChip({
   active,
   onClick,
-  ariaLabel,
+  dot,
   children,
 }: {
   active: boolean;
   onClick: () => void;
-  ariaLabel: string;
+  dot?: string;
   children: React.ReactNode;
 }) {
   return (
-    <Button
+    <button
       type="button"
-      variant={active ? "default" : "ghost"}
-      size="icon"
-      className={`h-8 w-8 rounded-full ${active ? "" : "text-ink/70 hover:bg-cream-dim hover:text-ink"}`}
       onClick={onClick}
-      aria-label={ariaLabel}
+      aria-pressed={active}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full border-2 border-ink px-3.5 py-1.5 text-xs font-bold uppercase tracking-widest transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brick focus-visible:ring-offset-2",
+        active
+          ? "bg-ink text-cream shadow-poster-sm"
+          : "bg-cream text-ink hover:-translate-y-0.5 hover:shadow-poster-sm",
+      )}
     >
+      {dot && (
+        <span
+          className="h-2 w-2 rounded-full"
+          style={{ background: dot }}
+          aria-hidden="true"
+        />
+      )}
       {children}
-    </Button>
-  );
-}
-
-function EmptyState({ onReset }: { onReset: () => void }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.25 }}
-      className="card-poster flex flex-col items-center bg-cream-dim p-10 text-center sm:p-14"
-    >
-      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full border-2 border-ink bg-cream shadow-poster-sm">
-        <SearchX className="h-8 w-8 text-brick" />
-      </div>
-      <h3 className="font-heading text-2xl font-bold text-ink">Ingen events fundet</h3>
-      <p className="mt-2 max-w-md text-ink/60">
-        Der matcher ikke nogen events med de valgte filtre. Prøv at fjerne nogle filtre eller
-        skift til en anden visning.
-      </p>
-      <Button
-        variant="default"
-        className="mt-6 rounded-full border-[3px] border-ink bg-ink px-6 text-cream shadow-poster-sm hover:bg-brick"
-        onClick={onReset}
-      >
-        <RotateCcw className="mr-2 h-4 w-4" />
-        Nulstil filtre
-      </Button>
-    </motion.div>
+    </button>
   );
 }
 
 function EventListItem({ event, index }: { event: FgcEvent; index: number }) {
   const start = new Date(event.date);
   const isOnline = event.format === "online";
+  const past = isPastEvent(event);
+  const game = event.game ?? "all";
 
   return (
-    <motion.div
+    <motion.li
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04 }}
-      className="card-poster-interactive flex flex-col gap-4 bg-cream p-4 sm:flex-row sm:items-center"
+      transition={{ delay: Math.min(index, 8) * 0.04 }}
+      className={cn(
+        "flex flex-col gap-4 rounded-xl border-2 border-ink bg-cream p-4 shadow-poster-sm transition-all hover:-translate-y-0.5 hover:shadow-poster sm:flex-row sm:items-center",
+        past && "opacity-60",
+      )}
     >
-      <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl border-2 border-ink bg-brick text-center text-cream shadow-poster-sm">
-        <span className="font-display text-lg leading-none">{start.getDate()}</span>
+      <div
+        className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-lg border-2 border-ink text-center text-ink shadow-poster-sm"
+        style={{ background: gameDotColors[game] }}
+        aria-hidden="true"
+      >
+        <span className="font-display text-lg leading-none">
+          {start.getDate()}
+        </span>
         <span className="text-[10px] font-bold uppercase">
           {start.toLocaleDateString("da-DK", { month: "short" })}
         </span>
       </div>
 
       <div className="min-w-0 flex-1">
-        <div className="mb-1.5 flex flex-wrap items-center gap-2">
-          {event.game && (
-            <Badge variant="outline" className={gameBadgeClasses[event.game]}>
-              <span className="mr-1">{gameIcons[event.game]}</span>
-              {event.game === "melee" && "Melee"}
-              {event.game === "ultimate" && "Ultimate"}
-              {event.game === "roa2" && "Rivals 2"}
-              {event.game === "all" && "Alle spil"}
-            </Badge>
-          )}
-          {event.format && (
-            <Badge variant="outline" className="border-ink/20 bg-cream-dim text-ink">
-              {isOnline ? <Globe className="mr-1 h-3 w-3" /> : <MapPin className="mr-1 h-3 w-3" />}
-              {isOnline ? "Online" : "Offline"}
-            </Badge>
-          )}
+        <div className="mb-1 flex flex-wrap items-center gap-2">
+          <Badge
+            variant="outline"
+            className={cn("border-2", gameChipClasses[game])}
+          >
+            {gameLabels[game]}
+          </Badge>
+          <Badge variant="outline">{isOnline ? "Online" : "Offline"}</Badge>
+          {past && <Badge variant="outline">Afholdt</Badge>}
         </div>
-        <h3 className="truncate font-heading text-base font-bold sm:text-lg">{event.title}</h3>
+        <h3 className="truncate font-heading text-base font-bold sm:text-lg">
+          {event.title}
+        </h3>
         <p className="mt-0.5 text-sm text-ink/60">
           {start.toLocaleDateString("da-DK", {
             weekday: "long",
@@ -506,6 +533,9 @@ function EventListItem({ event, index }: { event: FgcEvent; index: number }) {
             minute: "2-digit",
           })}
           {event.location && ` · ${event.location}`}
+          {event.attendees !== undefined &&
+            event.maxAttendees !== undefined &&
+            ` · ${event.attendees}/${event.maxAttendees} tilmeldte`}
         </p>
       </div>
 
@@ -515,14 +545,27 @@ function EventListItem({ event, index }: { event: FgcEvent; index: number }) {
           asChild
           variant="default"
           size="sm"
-          className="rounded-full border-[3px] border-ink bg-ink text-cream hover:bg-brick-soft"
+          className="bg-ink text-cream hover:bg-brick hover:text-ink"
         >
-          <a href={event.url || "/turneringer"}>
-            <CalendarIcon className="mr-1.5 h-4 w-4" />
-            Se event
+          <a
+            href={event.startggUrl || event.url || "https://start.gg/fgcnord"}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {past ? (
+              <>
+                <ArrowUpRight className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                Se resultater
+              </>
+            ) : (
+              <>
+                <CalendarPlus className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                Tilmeld
+              </>
+            )}
           </a>
         </Button>
       </div>
-    </motion.div>
+    </motion.li>
   );
 }

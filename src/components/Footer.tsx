@@ -43,7 +43,7 @@ export function Footer() {
         <div className="grid gap-12 md:grid-cols-4">
           <div>
             <div className="flex items-center gap-3">
-              <img src="/fgc4v3_dark.png" alt="FGC Nord logo" className="h-14 w-auto" />
+              <img src="/fgc5_light_transparent.png" alt="FGC Nord logo" className="h-14 w-auto" />
               <span className="font-display text-xl uppercase text-cream">FGC Nord</span>
             </div>
             <p className="mt-4 text-[15px] text-cream/70">Platform fighters i Nordjylland</p>

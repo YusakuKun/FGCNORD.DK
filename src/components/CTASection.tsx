@@ -44,7 +44,7 @@ export function CTASection({
           >
             <Link
               to="/bliv-medlem"
-              className="inline-block rounded-full border-[3px] border-ink bg-brick px-8 py-3.5 text-[15px] font-semibold uppercase tracking-[0.02em] text-cream shadow-poster transition-all duration-200 hover:-translate-y-0.5 hover:bg-brick-soft hover:shadow-poster-lg"
+              className="inline-block rounded-full border-[3px] border-ink bg-brick px-8 py-3.5 text-[15px] font-semibold uppercase tracking-[0.02em] text-ink shadow-poster transition-all duration-200 hover:-translate-y-0.5 hover:bg-brick-soft hover:shadow-poster-lg"
             >
               Bliv medlem
             </Link>

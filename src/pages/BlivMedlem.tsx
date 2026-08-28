@@ -6,14 +6,14 @@ import {
   Check,
   CheckCircle,
   CreditCard,
-  Crown,
   Loader2,
   User,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { CTASection } from "@/components/CTASection";
+import { DiscordIcon } from "@/components/Navbar";
 import { PageHeader } from "@/components/PageHeader";
 import { SectionHeader } from "@/components/SectionHeader";
 import {
@@ -25,40 +25,34 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { isClerkConfigured } from "@/lib/clerk";
+
+const PRICES = { junior: 75, senior: 150 } as const;
 
 const tiers = [
   {
-    name: "Støttemedlem",
-    price: "50",
+    name: "Ungdom (under 18)",
+    price: PRICES.junior,
     period: "kr. / år",
-    description:
-      "For dem der vil støtte foreningen uden at deltage aktivt.",
+    description: "For spillere under 18 år. Forældre skal blot bekræfte med deres email.",
     features: [
-      "Støtter communityet",
-      "Nyhedsbrev",
-      "Stemmeret på generalforsamlingen",
+      "Deltagelse i alle ugentlige meetups",
+      "Rabat på turneringsdeltagelse",
+      "Adgang til medlemsevents",
+      "Stemmeret (fra 15 år, jf. vedtægter)",
     ],
     highlighted: false,
   },
   {
-    name: "Aktivt medlem",
-    price: "150",
+    name: "Voksen (18+)",
+    price: PRICES.senior,
     period: "kr. / år",
-    description:
-      "For spillere der vil deltage i events og turneringer.",
+    description: "For voksne spillere og forældre, der vil være en aktiv del af fællesskabet.",
     features: [
-      "Alt fra Støttemedlem",
-      "Rabat på turneringsdeltagelse",
-      "Adgang til medlemsexclusives",
-      "Stemmeret på generalforsamlingen",
+      "Alt fra ungdomsmedlemskabet",
+      "Fuld stemmeret på generalforsamlingen",
+      "Kan stille op til bestyrelsen",
+      "Støtter foreningens ungdomsarbejde",
     ],
     highlighted: true,
   },
@@ -66,74 +60,160 @@ const tiers = [
 
 const faqs = [
   {
-    q: "Hvad får jeg som medlem?",
-    a: "Afhængigt af medlemskab får du stemmeret, rabat på turneringer, adgang til medlemsevents og vores nyhedsbrev.",
+    q: "Hvor gammel skal man være for at blive medlem?",
+    a: "Der er ingen nedre aldersgrænse. Er du under 18, skal en forælder eller værge blot bekræfte tilmeldingen med deres email. Mange af vores yngste medlemmer er 10-12 år, og forældre er altid velkomne til at kigge med.",
   },
   {
-    q: "Skal jeg være god til spillet?",
-    a: "Slet ikke! Vi har medlemmer på alle niveauer, fra helt nye spillere til erfarne turneringsspillere.",
+    q: "Hvad koster det — og hvorfor to priser?",
+    a: "Kontingentet er 75 kr. om året for medlemmer under 18 og 150 kr. om året for voksne. Prisen udregnes automatisk ud fra fødselsdatoen i tilmeldingen. Betaling sker via MobilePay, når du har indsendt formularen.",
   },
   {
-    q: "Hvordan betaler jeg?",
-    a: "Indtil videre håndterer vi betaling via MobilePay efter du har indsendt tilmeldingen.",
+    q: "Hvad får man som medlem?",
+    a: "Adgang til ugentlige meetups, rabat på turneringer, medlemsevents og stemmeret på generalforsamlingen. Som ungt medlem udløser du desuden kommunalt tilskud til foreningen — helt gratis for dig.",
   },
   {
-    q: "Hvorfor Discord login?",
-    a: "Det er en bekvem måde at udfylde din profil på. Det er helt frivilligt — du kan også tilmelde dig manuelt.",
+    q: "Kan man prøve at være med, før man melder sig ind?",
+    a: "Ja! De første to besøg til vores ugentlige meetups er gratis og helt uforpligtende. Kom forbi, prøv spillet og mærk stemningen, før I beslutter jer.",
+  },
+  {
+    q: "Er det et trygt sted for børn og unge?",
+    a: "Ja. Events er altid bemandet med voksne frivillige, vi har klare regler for god opførsel, og der er nultolerance over for mobning. Forældre er altid velkomne til at blive og kigge med.",
+  },
+  {
+    q: "Skal man være god til spillet?",
+    a: "Slet ikke! Vi har medlemmer på alle niveauer, fra helt nye spillere til erfarne turneringsspillere. Vores motto er, at alle kan blive bedre sammen.",
   },
 ];
 
-function DiscordIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      className={className}
-      aria-hidden="true"
-    >
-      <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
-    </svg>
-  );
+interface FormState {
+  name: string;
+  email: string;
+  gamertag: string;
+  game: string;
+  birthdate: string;
+  parentEmail: string;
+  acceptBylaws: boolean;
+}
+
+type FormErrors = Partial<Record<keyof FormState, string>>;
+
+function calculateAge(birthdate: string): number | null {
+  if (!birthdate) return null;
+  const birth = new Date(birthdate);
+  if (Number.isNaN(birth.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  return age < 0 || age > 120 ? null : age;
 }
 
 export function BlivMedlem() {
-  const [selectedTier, setSelectedTier] = useState<string | null>(null);
-  const [formState, setFormState] = useState({
+  const [formState, setFormState] = useState<FormState>({
     name: "",
     email: "",
     gamertag: "",
     game: "ultimate",
+    birthdate: "",
+    parentEmail: "",
+    acceptBylaws: false,
   });
+  const [errors, setErrors] = useState<FormErrors>({});
   const [submitted, setSubmitted] = useState(false);
+  const [demoMode, setDemoMode] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const age = useMemo(
+    () => calculateAge(formState.birthdate),
+    [formState.birthdate]
+  );
+  const isMinor = age !== null && age < 18;
+  const price = age === null ? null : isMinor ? PRICES.junior : PRICES.senior;
+
+  const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
+    setFormState((prev) => ({ ...prev, [key]: value }));
+    setErrors((prev) => ({ ...prev, [key]: undefined }));
+  };
+
+  const validate = (): FormErrors => {
+    const next: FormErrors = {};
+    if (!formState.name.trim()) next.name = "Skriv venligst dit fulde navn.";
+    if (!formState.email.trim()) {
+      next.email = "Skriv venligst din email-adresse.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formState.email.trim())) {
+      next.email = "Email-adressen ser ikke rigtig ud. Tjek den igen.";
+    }
+    if (!formState.birthdate) {
+      next.birthdate = "Vælg venligst din fødselsdato.";
+    } else if (age === null) {
+      next.birthdate = "Fødselsdatoen ser ikke rigtig ud. Tjek den igen.";
+    }
+    if (isMinor) {
+      if (!formState.parentEmail.trim()) {
+        next.parentEmail =
+          "Da du er under 18, skal vi have en forældres eller værges email.";
+      } else if (
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formState.parentEmail.trim())
+      ) {
+        next.parentEmail = "Forældre-emailen ser ikke rigtig ud.";
+      }
+    }
+    if (!formState.acceptBylaws) {
+      next.acceptBylaws =
+        "Du skal acceptere vedtægterne for at blive medlem.";
+    }
+    return next;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
     setSubmitError(null);
+    const nextErrors = validate();
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
 
+    setSubmitting(true);
     try {
       const response = await fetch("/api/membership", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: formState.name,
-          email: formState.email,
-          gamertag: formState.gamertag,
+          name: formState.name.trim(),
+          email: formState.email.trim(),
+          gamertag: formState.gamertag.trim(),
           game: formState.game,
-          tier: selectedTier,
+          birthdate: formState.birthdate,
+          age,
+          parentEmail: isMinor ? formState.parentEmail.trim() : undefined,
+          price,
         }),
       });
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || "Der opstod en fejl ved indsendelse.");
+        throw new Error(
+          (data as { error?: string }).error ||
+            "Der opstod en fejl ved indsendelse."
+        );
       }
 
       setSubmitted(true);
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : "Ukendt fejl");
+      // Demo-fallback: hvis API'et ikke er tilgængeligt (fx lokal udvikling),
+      // viser vi stadig success, så flowet kan opleves.
+      const isNetworkError =
+        err instanceof TypeError ||
+        (err instanceof Error &&
+          /failed to fetch|networkerror|load failed/i.test(err.message));
+      if (isNetworkError) {
+        setDemoMode(true);
+        setSubmitted(true);
+      } else {
+        setSubmitError(
+          err instanceof Error ? err.message : "Der opstod en ukendt fejl."
+        );
+      }
     } finally {
       setSubmitting(false);
     }
@@ -144,130 +224,108 @@ export function BlivMedlem() {
       <PageHeader
         eyebrow="Medlemskab"
         title="Bliv medlem af FGC Nord"
-        description="Støt foreningen og få adgang til events, turneringer og et fedt community af platform fighter-spillere."
+        description="Støt foreningen og få adgang til events, turneringer og et fedt community af platform fighter-spillere i Nordjylland."
       />
 
       {/* Pricing */}
       <section className="section-padding bg-cream">
         <div className="container-site px-4 sm:px-6 lg:px-8">
           <SectionHeader
-            eyebrow="Priser"
+            eyebrow="Kontingent"
             title="Vælg dit medlemskab"
-            description="Alle medlemskaber løber et år ad gangen og kan fornys når som helst."
+            description="Prisen afhænger af din alder og udregnes automatisk i tilmeldingen. Alle priser er pr. år."
             centered
             className="mx-auto"
           />
-
-          <div className="mx-auto grid max-w-4xl gap-6 sm:grid-cols-2">
-            {tiers.map((tier, index) => {
-              const isSelected = selectedTier === tier.name;
-              return (
-                <motion.div
-                  key={tier.name}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, amount: 0.3 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  whileHover={{ y: -6 }}
-                  className={`card-poster-interactive relative flex flex-col p-7 sm:p-9 ${
-                    tier.highlighted
-                      ? "bg-brick text-cream shadow-poster-lg"
-                      : "bg-cream text-ink shadow-poster"
-                  } ${isSelected ? "ring-4 ring-brick/40 ring-offset-4 ring-offset-cream" : ""}`}
+          <div className="mx-auto grid max-w-3xl gap-6 sm:grid-cols-2">
+            {tiers.map((tier, i) => (
+              <motion.div
+                key={tier.name}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+                whileHover={{ y: -4 }}
+                className={`relative rounded-2xl border-2 p-6 transition-shadow sm:p-8 ${
+                  tier.highlighted
+                    ? "border-ink bg-coal text-cream shadow-poster-lg"
+                    : "border-ink bg-cream shadow-poster"
+                }`}
+              >
+                {tier.highlighted && (
+                  <Badge className="absolute -top-3 left-6 bg-brick text-coal">
+                    Mest valgt
+                  </Badge>
+                )}
+                <h3 className="font-display text-2xl">{tier.name}</h3>
+                <div className="mt-2 flex items-baseline gap-1">
+                  <span className="font-display text-4xl">{tier.price}</span>
+                  <span className="text-sm opacity-80">{tier.period}</span>
+                </div>
+                <p
+                  className={`mt-3 text-sm ${
+                    tier.highlighted ? "text-cream/80" : "text-ink/70"
+                  }`}
                 >
-                  {tier.highlighted && (
-                    <Badge className="absolute -top-3 left-6 bg-ink text-cream shadow-poster-sm">
-                      Mest populær
-                    </Badge>
-                  )}
-                  {isSelected && (
-                    <div className="absolute -top-3 right-6">
-                      <span className="badge-poster bg-olive text-cream">
-                        <Check className="mr-1 h-3 w-3" />
-                        Valgt
-                      </span>
-                    </div>
-                  )}
-
-                  <h3 className="font-display text-2xl sm:text-3xl">{tier.name}</h3>
-                  <div className="mt-3 flex items-baseline gap-2">
-                    <span className="font-display text-5xl tracking-tight sm:text-6xl">
-                      {tier.price}
-                    </span>
-                    <span className={`text-base font-medium ${tier.highlighted ? "text-cream/80" : "text-ink/70"}`}>
-                      {tier.period}
-                    </span>
-                  </div>
-                  <p
-                    className={`mt-4 text-base leading-relaxed ${
-                      tier.highlighted ? "text-cream/80" : "text-ink/70"
-                    }`}
-                  >
-                    {tier.description}
-                  </p>
-                  <Separator
-                    className={`my-6 ${
-                      tier.highlighted ? "bg-cream/25" : "bg-ink/10"
-                    }`}
-                  />
-                  <ul className="space-y-3">
-                    {tier.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-3 text-base">
-                        <span
-                          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
-                            tier.highlighted ? "bg-cream text-brick" : "bg-olive text-cream"
-                          }`}
-                        >
-                          <Check className="h-3 w-3" />
-                        </span>
-                        <span className={tier.highlighted ? "text-cream/95" : "text-ink/90"}>
-                          {feature}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button
-                    type="button"
-                    size="lg"
-                    onClick={() => setSelectedTier(tier.name)}
-                    className={`mt-8 w-full ${
-                      tier.highlighted
-                        ? "bg-cream text-ink hover:bg-cream-dim"
-                        : "bg-brick text-cream hover:bg-brick-soft"
-                    } ${isSelected ? "opacity-80" : ""}`}
-                  >
-                    {isSelected ? "Valgt" : `Vælg ${tier.name}`}
-                  </Button>
-                </motion.div>
-              );
-            })}
+                  {tier.description}
+                </p>
+                <Separator
+                  className={`my-6 ${
+                    tier.highlighted ? "bg-cream/20" : "bg-ink/10"
+                  }`}
+                />
+                <ul className="space-y-3">
+                  {tier.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2 text-sm">
+                      <Check
+                        className={`mt-0.5 h-4 w-4 shrink-0 ${
+                          tier.highlighted ? "text-brick-soft" : "text-brick"
+                        }`}
+                        aria-hidden="true"
+                      />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  asChild
+                  className={`mt-6 w-full ${
+                    tier.highlighted
+                      ? "bg-brick text-coal hover:bg-brick-soft"
+                      : "bg-coal text-cream hover:bg-ink"
+                  }`}
+                >
+                  <a href="#tilmeld">Meld dig ind</a>
+                </Button>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Signup form */}
-      <section id="tilmeld" className="section-padding bg-olive text-cream halftone-dark">
+      <section id="tilmeld" className="section-padding scroll-mt-20 bg-olive text-cream">
         <div className="container-site px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
+          <div className="grid gap-12 lg:grid-cols-2">
             <div>
-              <PageHeader
+              <SectionHeader
                 eyebrow="Tilmelding"
                 title="Meld dig ind"
-                description="Udfyld formularen nedenfor. Du kan også logge ind med Discord for at udfylde felterne automatisk."
-                className="border-none bg-transparent px-0 py-0 text-left"
+                description="Udfyld formularen, og vi vender tilbage med betalingsinstruktioner. Du kan også logge ind med Discord for at udfylde felterne automatisk."
+                light
               />
 
               {isClerkConfigured() ? (
                 <ClerkAuthBlock setFormState={setFormState} />
               ) : (
-                <div className="rounded-2xl border-2 border-cream/20 bg-coal p-6 shadow-poster">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-cream/10">
-                      <User className="h-7 w-7 text-cream" />
+                <div className="rounded-xl border-2 border-cream/20 bg-coal p-6">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-cream/10">
+                      <User className="h-6 w-6 text-cream" aria-hidden="true" />
                     </div>
                     <div>
-                      <p className="font-heading text-lg font-bold">Discord login</p>
-                      <p className="text-sm leading-relaxed text-cream/70">
+                      <p className="font-heading font-bold">Discord login</p>
+                      <p className="text-sm text-cream/70">
                         Discord login er ikke konfigureret i øjeblikket. Du kan
                         stadig tilmelde dig manuelt med formularen.
                       </p>
@@ -275,6 +333,15 @@ export function BlivMedlem() {
                   </div>
                 </div>
               )}
+
+              <div className="mt-6 rounded-xl border-2 border-cream/20 bg-coal p-6">
+                <p className="font-heading font-bold">For forældre</p>
+                <p className="mt-1 text-sm text-cream/70">
+                  Er dit barn under 18? Så skal vi blot have din email til
+                  bekræftelse. Du er altid velkommen til at kigge forbi til et
+                  meetup og møde de voksne frivillige, før I beslutter jer.
+                </p>
+              </div>
             </div>
 
             <div>
@@ -282,22 +349,41 @@ export function BlivMedlem() {
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="rounded-2xl border-2 border-cream/20 bg-coal p-8 text-center shadow-poster-lg"
+                  className="rounded-2xl border-2 border-cream/20 bg-coal p-8 text-center"
+                  role="status"
+                  aria-live="polite"
                 >
-                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-brick/20">
-                    <CheckCircle className="h-10 w-10 text-brick-soft" />
-                  </div>
-                  <h3 className="mt-6 font-display text-2xl sm:text-3xl">
-                    Tak for din tilmelding!
+                  <CheckCircle className="mx-auto h-16 w-16 text-brick-soft" aria-hidden="true" />
+                  <h3 className="mt-4 font-display text-2xl">
+                    Tak for din tilmelding{formState.name ? `, ${formState.name.split(" ")[0]}` : ""}!
                   </h3>
-                  <p className="mx-auto mt-3 max-w-sm text-cream/70">
-                    Vi sender en bekræftelse til din email med
-                    betalingsinstruktioner.
+                  <p className="mt-2 text-cream/70">
+                    Vi sender en bekræftelse til {formState.email} med
+                    betalingsinstruktioner
+                    {price !== null && (
+                      <>
+                        {" "}
+                        — dit kontingent er{" "}
+                        <strong className="text-cream">{price} kr. / år</strong>
+                      </>
+                    )}
+                    .
                   </p>
+                  {isMinor && (
+                    <p className="mt-2 text-sm text-cream/60">
+                      Da du er under 18, sender vi også en bekræftelse til din
+                      forældre eller værge.
+                    </p>
+                  )}
+                  {demoMode && (
+                    <p className="mt-4 rounded-lg border border-brick/40 bg-brick/10 px-3 py-2 text-xs text-brick-soft">
+                      Demo-tilstand: Tilmeldingen er ikke sendt til serveren,
+                      da API'et ikke er tilgængeligt lige nu.
+                    </p>
+                  )}
                   <Button
                     asChild
-                    size="lg"
-                    className="mt-8 bg-brick text-cream hover:bg-brick-soft"
+                    className="mt-6 bg-brick text-coal hover:bg-brick-soft"
                   >
                     <Link to="/turneringer">
                       Se kommende events
@@ -308,139 +394,213 @@ export function BlivMedlem() {
               ) : (
                 <form
                   onSubmit={handleSubmit}
-                  className="rounded-2xl border-2 border-cream/20 bg-coal p-6 shadow-poster sm:p-9"
+                  noValidate
+                  className="rounded-2xl border-2 border-cream/20 bg-coal p-6 sm:p-8"
                 >
-                  {selectedTier && (
-                    <Alert className="mb-6 border-cream/20 bg-cream/10 text-cream">
-                      <Crown className="h-4 w-4" />
-                      <AlertTitle>Valgt medlemskab</AlertTitle>
-                      <AlertDescription>{selectedTier}</AlertDescription>
-                    </Alert>
-                  )}
-
                   {submitError && (
-                    <Alert className="mb-6 border-brick bg-brick/20 text-cream">
-                      <AlertCircle className="h-4 w-4" />
+                    <Alert className="mb-6 border-brick bg-brick/20 text-cream" role="alert">
+                      <AlertCircle className="h-4 w-4" aria-hidden="true" />
                       <AlertTitle>Fejl ved indsendelse</AlertTitle>
                       <AlertDescription>{submitError}</AlertDescription>
                     </Alert>
                   )}
 
-                  <div className="space-y-5">
-                    <div className="space-y-2">
-                      <label
-                        htmlFor="name"
-                        className="block text-sm font-bold uppercase tracking-wider text-cream/90"
-                      >
-                        Fulde navn
-                      </label>
+                  <div className="space-y-4">
+                    <Field
+                      id="name"
+                      label="Fulde navn"
+                      required
+                      error={errors.name}
+                    >
                       <Input
                         id="name"
-                        required
+                        autoComplete="name"
                         value={formState.name}
-                        onChange={(e) =>
-                          setFormState({ ...formState, name: e.target.value })
-                        }
-                        className="h-12 border-2 border-cream/20 bg-cream/10 text-cream placeholder:text-cream/40 focus-visible:border-brick focus-visible:ring-brick"
+                        onChange={(e) => set("name", e.target.value)}
+                        aria-invalid={!!errors.name}
+                        aria-describedby={errors.name ? "name-error" : undefined}
+                        className="border-2 border-cream/20 bg-cream/10 text-cream placeholder:text-cream/40"
                         placeholder="Dit navn"
                       />
-                    </div>
+                    </Field>
 
-                    <div className="space-y-2">
-                      <label
-                        htmlFor="email"
-                        className="block text-sm font-bold uppercase tracking-wider text-cream/90"
-                      >
-                        Email
-                      </label>
+                    <Field
+                      id="email"
+                      label="Email"
+                      required
+                      error={errors.email}
+                    >
                       <Input
                         id="email"
-                        required
                         type="email"
+                        autoComplete="email"
                         value={formState.email}
-                        onChange={(e) =>
-                          setFormState({ ...formState, email: e.target.value })
-                        }
-                        className="h-12 border-2 border-cream/20 bg-cream/10 text-cream placeholder:text-cream/40 focus-visible:border-brick focus-visible:ring-brick"
+                        onChange={(e) => set("email", e.target.value)}
+                        aria-invalid={!!errors.email}
+                        aria-describedby={errors.email ? "email-error" : undefined}
+                        className="border-2 border-cream/20 bg-cream/10 text-cream placeholder:text-cream/40"
                         placeholder="din@email.dk"
                       />
-                    </div>
+                    </Field>
 
-                    <div className="space-y-2">
-                      <label
-                        htmlFor="gamertag"
-                        className="block text-sm font-bold uppercase tracking-wider text-cream/90"
-                      >
-                        Gamertag / Discord navn
-                      </label>
+                    <Field id="gamertag" label="Gamertag / Discord navn">
                       <Input
                         id="gamertag"
                         value={formState.gamertag}
-                        onChange={(e) =>
-                          setFormState({
-                            ...formState,
-                            gamertag: e.target.value,
-                          })
-                        }
-                        className="h-12 border-2 border-cream/20 bg-cream/10 text-cream placeholder:text-cream/40 focus-visible:border-brick focus-visible:ring-brick"
-                        placeholder="Dit tag"
+                        onChange={(e) => set("gamertag", e.target.value)}
+                        className="border-2 border-cream/20 bg-cream/10 text-cream placeholder:text-cream/40"
+                        placeholder="Dit tag (valgfrit)"
                       />
-                    </div>
+                    </Field>
 
-                    <div className="space-y-2">
+                    <div>
                       <label
                         htmlFor="game"
-                        className="block text-sm font-bold uppercase tracking-wider text-cream/90"
+                        className="mb-1 block text-sm font-bold"
                       >
                         Primært spil
                       </label>
-                      <Select
+                      <select
+                        id="game"
                         value={formState.game}
-                        onValueChange={(value) =>
-                          setFormState({ ...formState, game: value })
-                        }
+                        onChange={(e) => set("game", e.target.value)}
+                        className="flex h-11 w-full rounded-md border-2 border-cream/20 bg-cream/10 px-3 py-2 text-cream focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brick"
                       >
-                        <SelectTrigger className="h-12 border-2 border-cream/20 bg-cream/10 text-cream focus:ring-brick [&>span]:text-cream [&>svg]:text-cream/60">
-                          <SelectValue placeholder="Vælg primært spil" />
-                        </SelectTrigger>
-                        <SelectContent className="border-cream/20 bg-coal text-cream">
-                          <SelectItem value="ultimate" className="focus:bg-cream/10 focus:text-cream">
-                            Super Smash Bros. Ultimate
-                          </SelectItem>
-                          <SelectItem value="melee" className="focus:bg-cream/10 focus:text-cream">
-                            Super Smash Bros. Melee
-                          </SelectItem>
-                          <SelectItem value="roa2" className="focus:bg-cream/10 focus:text-cream">
-                            Rivals of Aether 2
-                          </SelectItem>
-                          <SelectItem value="other" className="focus:bg-cream/10 focus:text-cream">
-                            Andet / flere spil
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                        <option value="ultimate" className="bg-coal text-cream">
+                          Super Smash Bros. Ultimate
+                        </option>
+                        <option value="melee" className="bg-coal text-cream">
+                          Super Smash Bros. Melee
+                        </option>
+                        <option value="roa2" className="bg-coal text-cream">
+                          Rivals of Aether 2
+                        </option>
+                        <option value="other" className="bg-coal text-cream">
+                          Andet / flere spil
+                        </option>
+                      </select>
+                    </div>
+
+                    <Field
+                      id="birthdate"
+                      label="Fødselsdato"
+                      required
+                      error={errors.birthdate}
+                      hint={
+                        price !== null
+                          ? `Dit kontingent: ${price} kr. / år (${isMinor ? "under 18" : "18 eller over"})`
+                          : "Bruges til at udregne dit kontingent automatisk."
+                      }
+                    >
+                      <Input
+                        id="birthdate"
+                        type="date"
+                        value={formState.birthdate}
+                        onChange={(e) => set("birthdate", e.target.value)}
+                        aria-invalid={!!errors.birthdate}
+                        aria-describedby={
+                          errors.birthdate ? "birthdate-error" : "birthdate-hint"
+                        }
+                        max={new Date().toISOString().split("T")[0]}
+                        className="border-2 border-cream/20 bg-cream/10 text-cream [color-scheme:dark]"
+                      />
+                    </Field>
+
+                    {isMinor && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="rounded-xl border-2 border-brick/50 bg-brick/10 p-4">
+                          <Field
+                            id="parentEmail"
+                            label="Forældres eller værges email"
+                            required
+                            error={errors.parentEmail}
+                            hint="Vi sender en kort bekræftelse, før medlemskabet er aktivt."
+                          >
+                            <Input
+                              id="parentEmail"
+                              type="email"
+                              value={formState.parentEmail}
+                              onChange={(e) =>
+                                set("parentEmail", e.target.value)
+                              }
+                              aria-invalid={!!errors.parentEmail}
+                              aria-describedby={
+                                errors.parentEmail
+                                  ? "parentEmail-error"
+                                  : "parentEmail-hint"
+                              }
+                              className="border-2 border-cream/20 bg-cream/10 text-cream placeholder:text-cream/40"
+                              placeholder="foraeldre@email.dk"
+                            />
+                          </Field>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    <div>
+                      <div className="flex items-start gap-3">
+                        <input
+                          id="acceptBylaws"
+                          type="checkbox"
+                          checked={formState.acceptBylaws}
+                          onChange={(e) =>
+                            set("acceptBylaws", e.target.checked)
+                          }
+                          aria-invalid={!!errors.acceptBylaws}
+                          aria-describedby={
+                            errors.acceptBylaws ? "acceptBylaws-error" : undefined
+                          }
+                          className="mt-1 h-5 w-5 shrink-0 rounded border-2 border-cream/40 accent-brick focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brick"
+                        />
+                        <label htmlFor="acceptBylaws" className="text-sm text-cream/85">
+                          Jeg har læst og accepterer{" "}
+                          <Link
+                            to="/om"
+                            className="font-bold text-brick-soft underline underline-offset-2 hover:text-cream"
+                          >
+                            foreningens vedtægter
+                          </Link>{" "}
+                          og er indforstået med, at kontingentet er{" "}
+                          {price !== null ? `${price} kr.` : "75/150 kr."} pr. år.
+                        </label>
+                      </div>
+                      {errors.acceptBylaws && (
+                        <p
+                          id="acceptBylaws-error"
+                          role="alert"
+                          className="mt-1.5 flex items-center gap-1.5 pl-8 text-sm text-brick-soft"
+                        >
+                          <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+                          {errors.acceptBylaws}
+                        </p>
+                      )}
                     </div>
                   </div>
 
                   <Button
                     type="submit"
-                    size="lg"
                     disabled={submitting}
-                    className="mt-8 w-full bg-brick text-cream shadow-poster transition-all hover:-translate-y-0.5 hover:bg-brick-soft hover:shadow-poster-lg disabled:translate-y-0 disabled:shadow-poster"
+                    className="mt-6 w-full bg-brick text-coal hover:bg-brick-soft disabled:opacity-60"
                   >
                     {submitting ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                         Sender...
                       </>
                     ) : (
                       <>
-                        <CreditCard className="mr-2 h-4 w-4" />
+                        <CreditCard className="mr-2 h-4 w-4" aria-hidden="true" />
                         Indsend tilmelding
+                        {price !== null && ` — ${price} kr. / år`}
                       </>
                     )}
                   </Button>
 
-                  <p className="mt-4 text-center text-xs leading-relaxed text-cream/50">
+                  <p className="mt-4 text-center text-xs text-cream/50">
                     Betalingen håndteres manuelt indtil videre. Du modtager en
                     email med MobilePay-oplysninger.
                   </p>
@@ -457,14 +617,15 @@ export function BlivMedlem() {
           <SectionHeader
             eyebrow="FAQ"
             title="Ofte stillede spørgsmål"
+            description="Svar til både spillere og forældre. Mangler du noget, så spørg os på Discord."
             centered
             className="mx-auto"
           />
 
           <div className="mx-auto max-w-3xl">
-            <Accordion className="space-y-4">
-              {faqs.map((item, i) => (
-                <AccordionItem key={i} title={item.q}>
+            <Accordion>
+              {faqs.map((item) => (
+                <AccordionItem key={item.q} title={item.q}>
                   {item.a}
                 </AccordionItem>
               ))}
@@ -478,17 +639,54 @@ export function BlivMedlem() {
   );
 }
 
+function Field({
+  id,
+  label,
+  required = false,
+  error,
+  hint,
+  children,
+}: {
+  id: string;
+  label: string;
+  required?: boolean;
+  error?: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label htmlFor={id} className="mb-1 block text-sm font-bold">
+        {label}
+        {required && (
+          <span className="ml-1 text-brick-soft" aria-hidden="true">
+            *
+          </span>
+        )}
+      </label>
+      {children}
+      {error ? (
+        <p
+          id={`${id}-error`}
+          role="alert"
+          className="mt-1.5 flex items-center gap-1.5 text-sm text-brick-soft"
+        >
+          <AlertCircle className="h-4 w-4 shrink-0" aria-hidden="true" />
+          {error}
+        </p>
+      ) : hint ? (
+        <p id={`${id}-hint`} className="mt-1.5 text-sm text-cream/60">
+          {hint}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 function ClerkAuthBlock({
   setFormState,
 }: {
-  setFormState: React.Dispatch<
-    React.SetStateAction<{
-      name: string;
-      email: string;
-      gamertag: string;
-      game: string;
-    }>
-  >;
+  setFormState: React.Dispatch<React.SetStateAction<FormState>>;
 }) {
   const { isLoaded, isSignedIn, user } = useUser();
 
@@ -504,32 +702,30 @@ function ClerkAuthBlock({
 
   if (!isLoaded) {
     return (
-      <div className="rounded-2xl border-2 border-cream/20 bg-coal p-6 shadow-poster">
-        <div className="flex items-center gap-4 text-cream/70">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <span className="font-heading">Tjekker login-status...</span>
-        </div>
+      <div className="flex items-center gap-2 text-cream/70">
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+        Tjekker login-status...
       </div>
     );
   }
 
   if (isSignedIn && user) {
     return (
-      <div className="rounded-2xl border-2 border-cream/20 bg-coal p-5 shadow-poster">
-        <div className="flex items-center gap-4">
+      <div className="rounded-xl border-2 border-cream/20 bg-coal p-4">
+        <div className="flex items-center gap-3">
           {user.imageUrl ? (
             <img
               src={user.imageUrl}
-              alt={user.fullName || "Discord bruger"}
-              className="h-14 w-14 rounded-full border-2 border-cream/20 object-cover"
+              alt=""
+              className="h-12 w-12 rounded-full border-2 border-cream/20"
             />
           ) : (
-            <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-cream/20 bg-cream/10">
-              <User className="h-6 w-6" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-cream/20 bg-cream/10">
+              <User className="h-5 w-5" aria-hidden="true" />
             </div>
           )}
           <div>
-            <p className="font-heading text-lg font-bold">
+            <p className="font-heading font-bold">
               Logget ind som {user.fullName || user.username}
             </p>
             <p className="text-sm text-cream/70">
@@ -542,28 +738,29 @@ function ClerkAuthBlock({
   }
 
   return (
-    <div className="rounded-2xl border-2 border-cream/20 bg-coal p-6 shadow-poster sm:p-8">
-      <div className="flex items-start gap-4">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#5865F2] shadow-poster-sm">
-          <DiscordIcon className="h-7 w-7 text-white" />
+    <div className="rounded-xl border-2 border-cream/20 bg-coal p-6">
+      <div className="flex items-center gap-3">
+        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#5865F2]">
+          <DiscordIcon size={24} />
         </div>
         <div>
-          <p className="font-heading text-lg font-bold">
-            Hurtig tilmelding med Discord
+          <p className="font-heading font-bold">
+            Hvorfor logge ind med Discord?
           </p>
-          <p className="mt-1 text-sm leading-relaxed text-cream/70">
-            Vi udfylder automatisk navn og email, så du slipper for at huske
-            endnu en konto. Det er helt frivilligt.
+          <p className="text-sm text-cream/70">
+            Vi udfylder automatisk navn og email, og du slipper for at huske
+            endnu en konto.
           </p>
         </div>
       </div>
       <SignInButton mode="modal" fallbackRedirectUrl="/bliv-medlem">
         <Button
           type="button"
-          size="lg"
-          className="mt-6 w-full bg-[#5865F2] text-white shadow-poster-sm transition-all hover:-translate-y-0.5 hover:bg-[#4752C4] hover:shadow-poster"
+          className="mt-4 w-full bg-[#5865F2] text-white hover:bg-[#4752C4]"
         >
-          <DiscordIcon className="mr-2 h-5 w-5" />
+          <span className="mr-2 inline-flex">
+            <DiscordIcon size={16} />
+          </span>
           Log ind med Discord
         </Button>
       </SignInButton>
