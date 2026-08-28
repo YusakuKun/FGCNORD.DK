@@ -25,6 +25,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { isClerkConfigured } from "@/lib/clerk";
 
 const tiers = [
@@ -143,72 +150,105 @@ export function BlivMedlem() {
       {/* Pricing */}
       <section className="section-padding bg-cream">
         <div className="container-site px-4 sm:px-6 lg:px-8">
-          <div className="mx-auto grid max-w-3xl gap-6 sm:grid-cols-2">
-            {tiers.map((tier) => (
-              <motion.div
-                key={tier.name}
-                whileHover={{ y: -4 }}
-                className={`relative rounded-2xl border-2 p-6 sm:p-8 ${
-                  tier.highlighted
-                    ? "border-ink bg-brick text-cream shadow-poster-lg"
-                    : "border-ink bg-cream shadow-poster"
-                }`}
-              >
-                {tier.highlighted && (
-                  <Badge className="absolute -top-3 left-6 bg-ink text-cream">
-                    Mest populær
-                  </Badge>
-                )}
-                <h3 className="font-display text-2xl">{tier.name}</h3>
-                <div className="mt-2 flex items-baseline gap-1">
-                  <span className="font-display text-4xl">{tier.price}</span>
-                  <span className="text-sm opacity-80">{tier.period}</span>
-                </div>
-                <p
-                  className={`mt-3 text-sm ${
-                    tier.highlighted ? "text-cream/80" : "text-ink/70"
-                  }`}
-                >
-                  {tier.description}
-                </p>
-                <Separator
-                  className={`my-6 ${
-                    tier.highlighted ? "bg-cream/20" : "bg-ink/10"
-                  }`}
-                />
-                <ul className="space-y-3">
-                  {tier.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2 text-sm">
-                      <Check
-                        className={`mt-0.5 h-4 w-4 shrink-0 ${
-                          tier.highlighted ? "text-cream" : "text-brick"
-                        }`}
-                      />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  type="button"
-                  onClick={() => setSelectedTier(tier.name)}
-                  className={`mt-6 w-full ${
+          <SectionHeader
+            eyebrow="Priser"
+            title="Vælg dit medlemskab"
+            description="Alle medlemskaber løber et år ad gangen og kan fornys når som helst."
+            centered
+            className="mx-auto"
+          />
+
+          <div className="mx-auto grid max-w-4xl gap-6 sm:grid-cols-2">
+            {tiers.map((tier, index) => {
+              const isSelected = selectedTier === tier.name;
+              return (
+                <motion.div
+                  key={tier.name}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  whileHover={{ y: -6 }}
+                  className={`card-poster-interactive relative flex flex-col p-7 sm:p-9 ${
                     tier.highlighted
-                      ? "bg-cream text-ink hover:bg-cream-dim"
-                      : "bg-brick text-cream hover:bg-brick-soft"
-                  }`}
+                      ? "bg-brick text-cream shadow-poster-lg"
+                      : "bg-cream text-ink shadow-poster"
+                  } ${isSelected ? "ring-4 ring-brick/40 ring-offset-4 ring-offset-cream" : ""}`}
                 >
-                  Vælg {tier.name}
-                </Button>
-              </motion.div>
-            ))}
+                  {tier.highlighted && (
+                    <Badge className="absolute -top-3 left-6 bg-ink text-cream shadow-poster-sm">
+                      Mest populær
+                    </Badge>
+                  )}
+                  {isSelected && (
+                    <div className="absolute -top-3 right-6">
+                      <span className="badge-poster bg-olive text-cream">
+                        <Check className="mr-1 h-3 w-3" />
+                        Valgt
+                      </span>
+                    </div>
+                  )}
+
+                  <h3 className="font-display text-2xl sm:text-3xl">{tier.name}</h3>
+                  <div className="mt-3 flex items-baseline gap-2">
+                    <span className="font-display text-5xl tracking-tight sm:text-6xl">
+                      {tier.price}
+                    </span>
+                    <span className={`text-base font-medium ${tier.highlighted ? "text-cream/80" : "text-ink/70"}`}>
+                      {tier.period}
+                    </span>
+                  </div>
+                  <p
+                    className={`mt-4 text-base leading-relaxed ${
+                      tier.highlighted ? "text-cream/80" : "text-ink/70"
+                    }`}
+                  >
+                    {tier.description}
+                  </p>
+                  <Separator
+                    className={`my-6 ${
+                      tier.highlighted ? "bg-cream/25" : "bg-ink/10"
+                    }`}
+                  />
+                  <ul className="space-y-3">
+                    {tier.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-3 text-base">
+                        <span
+                          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                            tier.highlighted ? "bg-cream text-brick" : "bg-olive text-cream"
+                          }`}
+                        >
+                          <Check className="h-3 w-3" />
+                        </span>
+                        <span className={tier.highlighted ? "text-cream/95" : "text-ink/90"}>
+                          {feature}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button
+                    type="button"
+                    size="lg"
+                    onClick={() => setSelectedTier(tier.name)}
+                    className={`mt-8 w-full ${
+                      tier.highlighted
+                        ? "bg-cream text-ink hover:bg-cream-dim"
+                        : "bg-brick text-cream hover:bg-brick-soft"
+                    } ${isSelected ? "opacity-80" : ""}`}
+                  >
+                    {isSelected ? "Valgt" : `Vælg ${tier.name}`}
+                  </Button>
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
 
       {/* Signup form */}
-      <section id="tilmeld" className="section-padding bg-olive text-cream">
+      <section id="tilmeld" className="section-padding bg-olive text-cream halftone-dark">
         <div className="container-site px-4 sm:px-6 lg:px-8">
-          <div className="grid gap-12 lg:grid-cols-2">
+          <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
             <div>
               <PageHeader
                 eyebrow="Tilmelding"
@@ -220,14 +260,14 @@ export function BlivMedlem() {
               {isClerkConfigured() ? (
                 <ClerkAuthBlock setFormState={setFormState} />
               ) : (
-                <div className="rounded-xl border-2 border-cream/20 bg-coal p-6">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-cream/10">
-                      <User className="h-6 w-6 text-cream" />
+                <div className="rounded-2xl border-2 border-cream/20 bg-coal p-6 shadow-poster">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-cream/10">
+                      <User className="h-7 w-7 text-cream" />
                     </div>
                     <div>
-                      <p className="font-heading font-bold">Discord login</p>
-                      <p className="text-sm text-cream/70">
+                      <p className="font-heading text-lg font-bold">Discord login</p>
+                      <p className="text-sm leading-relaxed text-cream/70">
                         Discord login er ikke konfigureret i øjeblikket. Du kan
                         stadig tilmelde dig manuelt med formularen.
                       </p>
@@ -242,19 +282,22 @@ export function BlivMedlem() {
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="rounded-2xl border-2 border-cream/20 bg-coal p-8 text-center"
+                  className="rounded-2xl border-2 border-cream/20 bg-coal p-8 text-center shadow-poster-lg"
                 >
-                  <CheckCircle className="mx-auto h-16 w-16 text-brick-soft" />
-                  <h3 className="mt-4 font-display text-2xl">
+                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-brick/20">
+                    <CheckCircle className="h-10 w-10 text-brick-soft" />
+                  </div>
+                  <h3 className="mt-6 font-display text-2xl sm:text-3xl">
                     Tak for din tilmelding!
                   </h3>
-                  <p className="mt-2 text-cream/70">
+                  <p className="mx-auto mt-3 max-w-sm text-cream/70">
                     Vi sender en bekræftelse til din email med
                     betalingsinstruktioner.
                   </p>
                   <Button
                     asChild
-                    className="mt-6 bg-brick text-cream hover:bg-brick-soft"
+                    size="lg"
+                    className="mt-8 bg-brick text-cream hover:bg-brick-soft"
                   >
                     <Link to="/turneringer">
                       Se kommende events
@@ -265,7 +308,7 @@ export function BlivMedlem() {
               ) : (
                 <form
                   onSubmit={handleSubmit}
-                  className="rounded-2xl border-2 border-cream/20 bg-coal p-6 sm:p-8"
+                  className="rounded-2xl border-2 border-cream/20 bg-coal p-6 shadow-poster sm:p-9"
                 >
                   {selectedTier && (
                     <Alert className="mb-6 border-cream/20 bg-cream/10 text-cream">
@@ -283,43 +326,55 @@ export function BlivMedlem() {
                     </Alert>
                   )}
 
-                  <div className="space-y-4">
-                    <div>
-                      <label className="mb-1 block text-sm font-bold">
+                  <div className="space-y-5">
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="name"
+                        className="block text-sm font-bold uppercase tracking-wider text-cream/90"
+                      >
                         Fulde navn
                       </label>
                       <Input
+                        id="name"
                         required
                         value={formState.name}
                         onChange={(e) =>
                           setFormState({ ...formState, name: e.target.value })
                         }
-                        className="border-2 border-cream/20 bg-cream/10 text-cream placeholder:text-cream/40"
+                        className="h-12 border-2 border-cream/20 bg-cream/10 text-cream placeholder:text-cream/40 focus-visible:border-brick focus-visible:ring-brick"
                         placeholder="Dit navn"
                       />
                     </div>
 
-                    <div>
-                      <label className="mb-1 block text-sm font-bold">
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="email"
+                        className="block text-sm font-bold uppercase tracking-wider text-cream/90"
+                      >
                         Email
                       </label>
                       <Input
+                        id="email"
                         required
                         type="email"
                         value={formState.email}
                         onChange={(e) =>
                           setFormState({ ...formState, email: e.target.value })
                         }
-                        className="border-2 border-cream/20 bg-cream/10 text-cream placeholder:text-cream/40"
+                        className="h-12 border-2 border-cream/20 bg-cream/10 text-cream placeholder:text-cream/40 focus-visible:border-brick focus-visible:ring-brick"
                         placeholder="din@email.dk"
                       />
                     </div>
 
-                    <div>
-                      <label className="mb-1 block text-sm font-bold">
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="gamertag"
+                        className="block text-sm font-bold uppercase tracking-wider text-cream/90"
+                      >
                         Gamertag / Discord navn
                       </label>
                       <Input
+                        id="gamertag"
                         value={formState.gamertag}
                         onChange={(e) =>
                           setFormState({
@@ -327,42 +382,50 @@ export function BlivMedlem() {
                             gamertag: e.target.value,
                           })
                         }
-                        className="border-2 border-cream/20 bg-cream/10 text-cream placeholder:text-cream/40"
+                        className="h-12 border-2 border-cream/20 bg-cream/10 text-cream placeholder:text-cream/40 focus-visible:border-brick focus-visible:ring-brick"
                         placeholder="Dit tag"
                       />
                     </div>
 
-                    <div>
-                      <label className="mb-1 block text-sm font-bold">
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="game"
+                        className="block text-sm font-bold uppercase tracking-wider text-cream/90"
+                      >
                         Primært spil
                       </label>
-                      <select
+                      <Select
                         value={formState.game}
-                        onChange={(e) =>
-                          setFormState({ ...formState, game: e.target.value })
+                        onValueChange={(value) =>
+                          setFormState({ ...formState, game: value })
                         }
-                        className="flex h-11 w-full rounded-md border-2 border-cream/20 bg-cream/10 px-3 py-2 text-cream focus:outline-none focus:ring-2 focus:ring-brick"
                       >
-                        <option value="ultimate" className="bg-coal text-cream">
-                          Super Smash Bros. Ultimate
-                        </option>
-                        <option value="melee" className="bg-coal text-cream">
-                          Super Smash Bros. Melee
-                        </option>
-                        <option value="roa2" className="bg-coal text-cream">
-                          Rivals of Aether 2
-                        </option>
-                        <option value="other" className="bg-coal text-cream">
-                          Andet / flere spil
-                        </option>
-                      </select>
+                        <SelectTrigger className="h-12 border-2 border-cream/20 bg-cream/10 text-cream focus:ring-brick [&>span]:text-cream [&>svg]:text-cream/60">
+                          <SelectValue placeholder="Vælg primært spil" />
+                        </SelectTrigger>
+                        <SelectContent className="border-cream/20 bg-coal text-cream">
+                          <SelectItem value="ultimate" className="focus:bg-cream/10 focus:text-cream">
+                            Super Smash Bros. Ultimate
+                          </SelectItem>
+                          <SelectItem value="melee" className="focus:bg-cream/10 focus:text-cream">
+                            Super Smash Bros. Melee
+                          </SelectItem>
+                          <SelectItem value="roa2" className="focus:bg-cream/10 focus:text-cream">
+                            Rivals of Aether 2
+                          </SelectItem>
+                          <SelectItem value="other" className="focus:bg-cream/10 focus:text-cream">
+                            Andet / flere spil
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
                   <Button
                     type="submit"
+                    size="lg"
                     disabled={submitting}
-                    className="mt-6 w-full bg-brick text-cream hover:bg-brick-soft"
+                    className="mt-8 w-full bg-brick text-cream shadow-poster transition-all hover:-translate-y-0.5 hover:bg-brick-soft hover:shadow-poster-lg disabled:translate-y-0 disabled:shadow-poster"
                   >
                     {submitting ? (
                       <>
@@ -377,7 +440,7 @@ export function BlivMedlem() {
                     )}
                   </Button>
 
-                  <p className="mt-4 text-center text-xs text-cream/50">
+                  <p className="mt-4 text-center text-xs leading-relaxed text-cream/50">
                     Betalingen håndteres manuelt indtil videre. Du modtager en
                     email med MobilePay-oplysninger.
                   </p>
@@ -399,7 +462,7 @@ export function BlivMedlem() {
           />
 
           <div className="mx-auto max-w-3xl">
-            <Accordion>
+            <Accordion className="space-y-4">
               {faqs.map((item, i) => (
                 <AccordionItem key={i} title={item.q}>
                   {item.a}
@@ -441,30 +504,32 @@ function ClerkAuthBlock({
 
   if (!isLoaded) {
     return (
-      <div className="flex items-center gap-2 text-cream/70">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        Tjekker login-status...
+      <div className="rounded-2xl border-2 border-cream/20 bg-coal p-6 shadow-poster">
+        <div className="flex items-center gap-4 text-cream/70">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="font-heading">Tjekker login-status...</span>
+        </div>
       </div>
     );
   }
 
   if (isSignedIn && user) {
     return (
-      <div className="rounded-xl border-2 border-cream/20 bg-coal p-4">
-        <div className="flex items-center gap-3">
+      <div className="rounded-2xl border-2 border-cream/20 bg-coal p-5 shadow-poster">
+        <div className="flex items-center gap-4">
           {user.imageUrl ? (
             <img
               src={user.imageUrl}
               alt={user.fullName || "Discord bruger"}
-              className="h-12 w-12 rounded-full border-2 border-cream/20"
+              className="h-14 w-14 rounded-full border-2 border-cream/20 object-cover"
             />
           ) : (
-            <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-cream/20 bg-cream/10">
-              <User className="h-5 w-5" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-cream/20 bg-cream/10">
+              <User className="h-6 w-6" />
             </div>
           )}
           <div>
-            <p className="font-heading font-bold">
+            <p className="font-heading text-lg font-bold">
               Logget ind som {user.fullName || user.username}
             </p>
             <p className="text-sm text-cream/70">
@@ -477,27 +542,28 @@ function ClerkAuthBlock({
   }
 
   return (
-    <div className="rounded-xl border-2 border-cream/20 bg-coal p-6">
-      <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#5865F2]">
-          <DiscordIcon className="h-6 w-6 text-white" />
+    <div className="rounded-2xl border-2 border-cream/20 bg-coal p-6 shadow-poster sm:p-8">
+      <div className="flex items-start gap-4">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#5865F2] shadow-poster-sm">
+          <DiscordIcon className="h-7 w-7 text-white" />
         </div>
         <div>
-          <p className="font-heading font-bold">
-            Hvorfor logge ind med Discord?
+          <p className="font-heading text-lg font-bold">
+            Hurtig tilmelding med Discord
           </p>
-          <p className="text-sm text-cream/70">
-            Vi udfylder automatisk navn og email, og du slipper for at huske
-            endnu en konto.
+          <p className="mt-1 text-sm leading-relaxed text-cream/70">
+            Vi udfylder automatisk navn og email, så du slipper for at huske
+            endnu en konto. Det er helt frivilligt.
           </p>
         </div>
       </div>
       <SignInButton mode="modal" fallbackRedirectUrl="/bliv-medlem">
         <Button
           type="button"
-          className="mt-4 w-full bg-[#5865F2] text-white hover:bg-[#4752C4]"
+          size="lg"
+          className="mt-6 w-full bg-[#5865F2] text-white shadow-poster-sm transition-all hover:-translate-y-0.5 hover:bg-[#4752C4] hover:shadow-poster"
         >
-          <DiscordIcon className="mr-2 h-4 w-4" />
+          <DiscordIcon className="mr-2 h-5 w-5" />
           Log ind med Discord
         </Button>
       </SignInButton>

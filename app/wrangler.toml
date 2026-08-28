@@ -1,0 +1,11 @@
+name = "fgc-nord"
+compatibility_date = "2024-01-01"
+
+# Cloudflare Pages project
+# Build settings (set in Cloudflare dashboard):
+# - Build command: npm run build
+# - Build output directory: dist
+# - Root directory: /
+
+# Environment variables needed in production:
+# - DISCORD_WEBHOOK_URL
