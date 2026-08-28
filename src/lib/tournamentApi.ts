@@ -1,0 +1,122 @@
+const API_BASE = "/api";
+
+async function fetchJson(
+  path: string,
+  init?: RequestInit,
+): Promise<unknown> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    ...init,
+  });
+  const data = (await res.json().catch(() => ({
+    error: "Uventet svar fra serveren.",
+  }))) as { error?: string };
+  if (!res.ok) {
+    throw new Error(data.error || `HTTP ${res.status}`);
+  }
+  return data;
+}
+
+export async function joinAsGuest(gamertag: string) {
+  return fetchJson("/auth/guest", {
+    method: "POST",
+    body: JSON.stringify({ gamertag }),
+  }) as Promise<{ success: boolean; player: { id: string; gamertag: string } }>;
+}
+
+export async function logout() {
+  return fetchJson("/auth/logout", { method: "POST" }) as Promise<{
+    success: boolean;
+  }>;
+}
+
+export async function getTournament(code: string) {
+  return fetchJson(`/tournaments/${encodeURIComponent(code)}`) as Promise<
+    TournamentPublic
+  >;
+}
+
+export async function joinTournament(code: string) {
+  return fetchJson(`/tournaments/${encodeURIComponent(code)}/join`, {
+    method: "POST",
+  }) as Promise<{ success: boolean; tournament_id: string }>;
+}
+
+export async function checkin(code: string) {
+  return fetchJson(`/tournaments/${encodeURIComponent(code)}/checkin`, {
+    method: "POST",
+  }) as Promise<{ success: boolean }>;
+}
+
+export async function getTournamentMe(code: string) {
+  return fetchJson(`/tournaments/${encodeURIComponent(code)}/me`) as Promise<{
+    joined: boolean;
+    player_id?: string;
+    checked_in: boolean;
+    seed: number | null;
+    match: Match | null;
+    matches: Match[];
+  }>;
+}
+
+export async function getBracket(code: string) {
+  return fetchJson(`/tournaments/${encodeURIComponent(code)}/bracket`) as Promise<{
+    tournament: { id: string; name: string; status: string };
+    entrants: { id: string; gamertag: string }[];
+    matches: Match[];
+  }>;
+}
+
+export async function reportMatch(
+  matchId: string,
+  score1: number,
+  score2: number,
+) {
+  return fetchJson(`/matches/${encodeURIComponent(matchId)}`, {
+    method: "POST",
+    body: JSON.stringify({ score1, score2 }),
+  }) as Promise<{ success: boolean; status: string; message?: string }>;
+}
+
+export async function confirmMatch(matchId: string) {
+  return fetchJson(`/matches/${encodeURIComponent(matchId)}`, {
+    method: "PUT",
+  }) as Promise<{ success: boolean; status: string }>;
+}
+
+export async function disputeMatch(matchId: string) {
+  return fetchJson(`/matches/${encodeURIComponent(matchId)}`, {
+    method: "DELETE",
+  }) as Promise<{ success: boolean; status: string; message?: string }>;
+}
+
+export interface TournamentPublic {
+  id: string;
+  name: string;
+  game: string;
+  format: string;
+  status: string;
+  join_code: string;
+  startgg_slug: string | null;
+  created_at: number;
+  entrants: { id: string; gamertag: string; checked_in: number; seed: number | null }[];
+  my_entry?: { checked_in: number; seed: number | null } | null;
+}
+
+export interface Match {
+  id: string;
+  tournament_id: string;
+  round: number;
+  slot: number;
+  player1_id: string | null;
+  player2_id: string | null;
+  score1: number | null;
+  score2: number | null;
+  winner_id: string | null;
+  status: string;
+  reported_by: string | null;
+  next_winner_match_id: string | null;
+  next_loser_match_id: string | null;
+  created_at: number;
+}

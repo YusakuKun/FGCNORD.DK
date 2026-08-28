@@ -6,6 +6,9 @@ import { Home } from "@/pages/Home";
 import { Om } from "@/pages/Om";
 import { Placeholder } from "@/pages/Placeholder";
 import { StageStrike } from "@/pages/StageStrike";
+import { TournamentBracket } from "@/pages/TournamentBracket";
+import { TournamentLanding } from "@/pages/TournamentLanding";
+import { TournamentMe } from "@/pages/TournamentMe";
 import { Turneringer } from "@/pages/Turneringer";
 
 import "./App.css";
@@ -17,6 +20,9 @@ function App() {
         <Route index element={<Home />} />
         <Route path="turneringer" element={<Turneringer />} />
         <Route path="stage-strike" element={<StageStrike />} />
+        <Route path="t/:code" element={<TournamentLanding />} />
+        <Route path="t/:code/mig" element={<TournamentMe />} />
+        <Route path="t/:code/bracket" element={<TournamentBracket />} />
         <Route path="om" element={<Om />} />
         <Route path="bliv-medlem" element={<BlivMedlem />} />
         <Route path="*" element={<Placeholder />} />

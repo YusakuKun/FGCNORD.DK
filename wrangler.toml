@@ -7,5 +7,17 @@ compatibility_date = "2024-01-01"
 # - Build output directory: dist
 # - Root directory: /
 
+# D1 database binding (create with: wrangler d1 create fgc-nord-db)
+[[d1_databases]]
+binding = "DB"
+database_name = "fgc-nord-db"
+database_id = "00000000-0000-0000-0000-000000000000" # replace with real ID after creating
+migrations_dir = "functions/migrations"
+
 # Environment variables needed in production:
 # - DISCORD_WEBHOOK_URL
+# - SESSION_SECRET                     # min 32 bytes, used to sign session cookies
+# - ADMIN_API_KEY                      # secret key required to create tournaments
+# - DISCORD_CLIENT_ID                  # OAuth app client ID (optional)
+# - DISCORD_CLIENT_SECRET              # OAuth app secret (optional)
+# - DISCORD_REDIRECT_URI               # e.g. https://fgcnord.dk/api/auth/discord/callback
