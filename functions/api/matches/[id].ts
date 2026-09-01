@@ -9,6 +9,54 @@ import {
   ResponseError,
 } from "../../lib/api";
 import { confirmMatchResult, loadMatch } from "../../lib/match";
+import type { MatchRow } from "../../lib/match";
+import {
+  bracketUrl,
+  DISCORD_COLORS,
+  gameLabel,
+  notifyDiscord,
+} from "../../lib/discord";
+
+/** Post kampresultat til Discord når en kamp er bekræftet */
+async function notifyMatchResult(
+  context: EventContext<Env, "id", { ctx: ApiContext }>,
+  match: MatchRow,
+  score1: number,
+  score2: number,
+  winnerId: string,
+): Promise<void> {
+  const ctx = context.data.ctx;
+  const players = await ctx.env.DB.prepare(
+    `SELECT p.id, p.gamertag, t.name AS tournament_name, t.game, t.join_code
+     FROM matches m
+     JOIN tournaments t ON t.id = m.tournament_id
+     LEFT JOIN players p ON p.id IN (m.player1_id, m.player2_id)
+     WHERE m.id = ?`,
+  )
+    .bind(match.id)
+    .all<{
+      id: string | null;
+      gamertag: string | null;
+      tournament_name: string;
+      game: string;
+      join_code: string;
+    }>();
+
+  const rows = players.results || [];
+  if (!rows.length) return;
+  const name1 = rows.find((r) => r.id === match.player1_id)?.gamertag ?? "?";
+  const name2 = rows.find((r) => r.id === match.player2_id)?.gamertag ?? "?";
+  const winner = winnerId === match.player1_id ? name1 : name2;
+  const { tournament_name, game, join_code } = rows[0];
+
+  await notifyDiscord(ctx.env, {
+    title: `⚔️ ${winner} vinder ${score1}-${score2}`,
+    description: `${name1} vs ${name2} — ${gameLabel(game)} · ${tournament_name}`,
+    color: DISCORD_COLORS.gold,
+    url: bracketUrl(ctx.request, join_code),
+    footer: { text: "Se den fulde bracket på fgcnord.dk" },
+  });
+}
 
 export async function onRequestGet(
   context: EventContext<Env, "id", { ctx: ApiContext }>,
@@ -91,6 +139,9 @@ export async function onRequestPost(
           winnerId,
           match.reported_by ?? session.player_id,
         );
+        context.waitUntil(
+          notifyMatchResult(context, match, score1, score2, winnerId),
+        );
         return json({ success: true, status: "confirmed" }, { headers: corsHeaders(origin) });
       }
 
@@ -171,6 +222,10 @@ export async function onRequestPut(
       match.score2,
       match.winner_id,
       match.reported_by ?? session.player_id,
+    );
+
+    context.waitUntil(
+      notifyMatchResult(context, match, match.score1, match.score2, match.winner_id),
     );
 
     return json({ success: true, status: "confirmed" }, { headers: corsHeaders(origin) });
