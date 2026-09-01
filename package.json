@@ -13,7 +13,6 @@
     "db:migrate:local": "wrangler d1 migrations apply fgc-nord-db --local"
   },
   "dependencies": {
-    "@clerk/clerk-react": "^5.61.9",
     "@gsap/react": "^2.1.2",
     "@radix-ui/react-dialog": "^1.1.23",
     "@radix-ui/react-select": "^2.3.7",

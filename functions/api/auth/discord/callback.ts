@@ -27,6 +27,39 @@ function getRedirectUri(ctx: ApiContext): string {
   );
 }
 
+function decodeReturnTo(state: string | null): string {
+  if (!state) return "/";
+  try {
+    const b64 = state.replaceAll("-", "+").replaceAll("_", "/");
+    const parsed = JSON.parse(atob(b64)) as { r?: string };
+    const r = parsed.r || "/";
+    return r.startsWith("/") && !r.startsWith("//") ? r : "/";
+  } catch {
+    return "/";
+  }
+}
+
+/** Tjek om Discord-brugeren er på vores server (kræver bot token + guild id) */
+async function checkGuildMembership(
+  ctx: ApiContext,
+  discordUserId: string,
+): Promise<boolean | null> {
+  const botToken = ctx.env.DISCORD_BOT_TOKEN;
+  const guildId = ctx.env.DISCORD_GUILD_ID;
+  if (!botToken || !guildId) return null; // ikke konfigureret — lad være med at ændre status
+  try {
+    const res = await fetch(
+      `https://discord.com/api/guilds/${guildId}/members/${discordUserId}`,
+      { headers: { Authorization: `Bot ${botToken}` } },
+    );
+    if (res.ok) return true;
+    if (res.status === 404) return false;
+    return null; // andre fejl: rør ikke eksisterende status
+  } catch {
+    return null;
+  }
+}
+
 export async function onRequestGet(
   context: EventContext<Env, never, { ctx: ApiContext }>,
 ): Promise<Response> {
@@ -79,6 +112,10 @@ export async function onRequestGet(
     }
     const user = (await userRes.json()) as DiscordUser;
 
+    const username = user.global_name || user.username;
+    const isMember = await checkGuildMembership(ctx, user.id);
+    const now = Date.now();
+
     let player = await ctx.env.DB.prepare(
       "SELECT id, discord_id, gamertag, created_at FROM players WHERE discord_id = ?",
     )
@@ -87,18 +124,43 @@ export async function onRequestGet(
 
     if (!player) {
       const playerId = ulid();
-      const gamertag = user.global_name || user.username;
       await ctx.env.DB.prepare(
-        "INSERT INTO players (id, discord_id, gamertag, created_at) VALUES (?, ?, ?, ?)",
+        `INSERT INTO players (id, discord_id, gamertag, discord_username, discord_avatar, is_member, member_since, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       )
-        .bind(playerId, user.id, gamertag, Date.now())
+        .bind(
+          playerId,
+          user.id,
+          username,
+          username,
+          user.avatar ?? null,
+          isMember === true ? 1 : 0,
+          isMember === true ? now : null,
+          now,
+        )
         .run();
-      player = {
-        id: playerId,
-        discord_id: user.id,
-        gamertag,
-        created_at: Date.now(),
-      };
+      player = { id: playerId, discord_id: user.id, gamertag: username, created_at: now };
+    } else {
+      // Opdatér profilfelter — og medlemsstatus, hvis vi kunne tjekke den
+      if (isMember === null) {
+        await ctx.env.DB.prepare(
+          "UPDATE players SET discord_username = ?, discord_avatar = ? WHERE id = ?",
+        )
+          .bind(username, user.avatar ?? null, player.id)
+          .run();
+      } else if (isMember) {
+        await ctx.env.DB.prepare(
+          "UPDATE players SET discord_username = ?, discord_avatar = ?, is_member = 1, member_since = COALESCE(member_since, ?) WHERE id = ?",
+        )
+          .bind(username, user.avatar ?? null, now, player.id)
+          .run();
+      } else {
+        await ctx.env.DB.prepare(
+          "UPDATE players SET discord_username = ?, discord_avatar = ?, is_member = 0, member_since = NULL WHERE id = ?",
+        )
+          .bind(username, user.avatar ?? null, player.id)
+          .run();
+      }
     }
 
     const { cookie } = await createSession(
@@ -107,10 +169,7 @@ export async function onRequestGet(
       player.id,
     );
 
-    const returnTo = url.searchParams.get("state") || "/";
-    const safeReturnTo = returnTo.startsWith("/") && !returnTo.startsWith("//")
-      ? returnTo
-      : "/";
+    const safeReturnTo = decodeReturnTo(url.searchParams.get("state"));
 
     return new Response(null, {
       status: 302,

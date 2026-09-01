@@ -19,8 +19,22 @@ export async function onRequestGet(
       return error("Discord-login er ikke konfigureret.", 503, corsHeaders(origin));
     }
 
+    const reqUrl = new URL(ctx.request.url);
+    const returnToParam = reqUrl.searchParams.get("returnTo") || "/";
+    const returnTo =
+      returnToParam.startsWith("/") && !returnToParam.startsWith("//")
+        ? returnToParam
+        : "/";
+
+    // State bærer både CSRF-nonce og returlink gennem OAuth-flowet
+    const state = btoa(
+      JSON.stringify({ n: crypto.randomUUID(), r: returnTo }),
+    )
+      .replaceAll("+", "-")
+      .replaceAll("/", "_")
+      .replaceAll("=", "");
+
     const redirectUri = getRedirectUri(ctx);
-    const state = crypto.randomUUID();
 
     const url = new URL("https://discord.com/oauth2/authorize");
     url.searchParams.set("client_id", clientId);

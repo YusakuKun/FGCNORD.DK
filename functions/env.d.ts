@@ -15,4 +15,8 @@ interface Env {
   DISCORD_CLIENT_ID: string;
   DISCORD_CLIENT_SECRET: string;
   DISCORD_REDIRECT_URI: string;
+  /** Discord-bot token — bruges til at tjekke server-medlemskab (valgfri) */
+  DISCORD_BOT_TOKEN?: string;
+  /** Vores Discord-servers guild-ID (valgfri, men krævet for medlems-tracking) */
+  DISCORD_GUILD_ID?: string;
 }
