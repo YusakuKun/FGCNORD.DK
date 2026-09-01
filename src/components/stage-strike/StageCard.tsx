@@ -151,7 +151,7 @@ export function StageCard({ stage, state, onSelect, actionLabel, dsrLabel = "DSR
       {state === "picked" && (
         <motion.span
           initial={{ y: 8, opacity: 0 }}
-          animate={{ y: 8, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
           className="absolute right-1.5 top-1.5 rounded-full bg-brick px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-coal"
         >
           Valgt
