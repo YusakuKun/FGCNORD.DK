@@ -10,8 +10,8 @@ const pageMeta: Record<string, { title: string; description: string }> = {
     description: "Se kommende events og turneringer fra FGC Nord.",
   },
   "/om": {
-    title: "Om foreningen",
-    description: "Læs mere om FGC Nords historie, bestyrelse og værdier.",
+    title: "Om fællesskabet",
+    description: "Læs mere om FGC Nords historie, crew og værdier.",
   },
   "/bliv-medlem": {
     title: "Bliv medlem",
