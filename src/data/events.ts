@@ -120,7 +120,7 @@ export const upcomingEvents: FgcEvent[] = [
     date: "2026-10-01T18:00:00",
     endDate: "2026-10-01T22:00:00",
     description:
-      "Torsdags-weekly i Aalborg. Ultimate singles kl. 19, casuals fra kl. 18. Gratis for medlemmer, 30 kr for gæster.",
+      "Torsdags-weekly i Aalborg. Ultimate singles kl. 19, casuals fra kl. 18. Gratis adgang — alle er velkomne.",
     location: "Aalborg – Nordkraft",
     game: "ultimate",
     format: "offline",
