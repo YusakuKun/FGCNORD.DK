@@ -181,6 +181,21 @@ export async function adminStartTournament(adminKey: string, code: string) {
   ) as Promise<{ success: boolean; matches: number }>;
 }
 
+/** Importér tilmeldte fra turneringens tilknyttede start.gg-event */
+export async function adminImportEntrants(adminKey: string, code: string) {
+  return fetchAdmin(
+    `/tournaments/${encodeURIComponent(code)}/import-entrants`,
+    adminKey,
+    { method: "POST" },
+  ) as Promise<{
+    success: boolean;
+    imported: number;
+    alreadyRegistered: number;
+    total: number;
+    event: string;
+  }>;
+}
+
 /* ---------- Admin: lobby ---------- */
 
 export async function adminOpenLobby(

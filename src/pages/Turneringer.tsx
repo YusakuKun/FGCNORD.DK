@@ -19,6 +19,7 @@ import { CTASection } from "@/components/CTASection";
 import { WaveDivider } from "@/components/WaveDivider";
 import { Countdown } from "@/components/turneringer/Countdown";
 import { SelfServeSteps } from "@/components/turneringer/SelfServeSteps";
+import { StartggEvents } from "@/components/turneringer/StartggEvents";
 import { TurneringCard } from "@/components/turneringer/TurneringCard";
 import {
   gameChipClasses,
@@ -169,6 +170,9 @@ export function Turneringer() {
               <Countdown event={nextEvent} />
             </div>
           )}
+
+          {/* Live events fra start.gg (vises kun når integrationen er sat op) */}
+          <StartggEvents />
 
           {/* Filtre */}
           <div

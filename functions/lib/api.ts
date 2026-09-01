@@ -13,6 +13,8 @@ export interface Env {
   DISCORD_MEMBER_ROLE_ID?: string;
   /** Rolle der pinges ved nye turneringer/bracket-start (falder tilbage på medlemsrollen) */
   DISCORD_PING_ROLE_ID?: string;
+  /** start.gg API-token (Developer Settings på start.gg) */
+  STARTGG_API_TOKEN?: string;
 }
 
 export interface ApiContext {

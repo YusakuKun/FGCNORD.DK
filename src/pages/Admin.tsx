@@ -3,6 +3,7 @@ import {
   Calendar,
   CheckCircle2,
   Copy,
+  Download,
   Gamepad2,
   KeyRound,
   Play,
@@ -23,6 +24,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   adminCreateTournament,
+  adminImportEntrants,
   adminListTournaments,
   adminOpenLobby,
   adminCloseLobby,
@@ -170,6 +172,22 @@ export function Admin() {
   const copyLink = (code: string) => {
     void navigator.clipboard.writeText(`${window.location.origin}/t/${code}`);
     setNotice(`Join-link kopieret: /t/${code}`);
+  };
+
+  const handleImportEntrants = async (t: AdminTournament) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await adminImportEntrants(key, t.join_code);
+      setNotice(
+        `Hentede ${res.total} tilmeldte fra start.gg-eventet "${res.event}": ${res.imported} nye tilføjet, ${res.alreadyRegistered} var allerede tilmeldt.`,
+      );
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Kunne ikke hente tilmeldte fra start.gg");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleOpenLobby = async () => {
@@ -535,6 +553,18 @@ export function Admin() {
                             <Swords className="mr-1 h-4 w-4" aria-hidden="true" /> Bracket
                           </Link>
                         </Button>
+                        {t.startgg_slug && (t.status === "signup" || t.status === "checkin") && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => void handleImportEntrants(t)}
+                            disabled={busy}
+                            className="border-2 border-ink"
+                            title={`Hent tilmeldte fra ${t.startgg_slug}`}
+                          >
+                            <Download className="mr-1 h-4 w-4" aria-hidden="true" /> Hent tilmeldte
+                          </Button>
+                        )}
                         {(t.status === "signup" || t.status === "checkin") && (
                           <Button
                             size="sm"

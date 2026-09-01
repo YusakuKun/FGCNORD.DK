@@ -245,10 +245,15 @@ export async function onRequestPut(
       match.reported_by ?? session.player_id,
     );
 
+    // Fang narrowed værdier før closuren (TS bevarer ikke property-narrowing i closures)
+    const finalScore1 = match.score1;
+    const finalScore2 = match.score2;
+    const finalWinnerId = match.winner_id;
+
     context.waitUntil(
       (async () => {
-        await applyTournamentRating(ctx.env.DB, match, match.winner_id as string);
-        await notifyMatchResult(context, match, match.score1, match.score2, match.winner_id);
+        await applyTournamentRating(ctx.env.DB, match, finalWinnerId);
+        await notifyMatchResult(context, match, finalScore1, finalScore2, finalWinnerId);
       })(),
     );
 
