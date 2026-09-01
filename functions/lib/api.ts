@@ -11,6 +11,8 @@ export interface Env {
   DISCORD_BOT_TOKEN?: string;
   DISCORD_GUILD_ID?: string;
   DISCORD_MEMBER_ROLE_ID?: string;
+  /** Rolle der pinges ved nye turneringer/bracket-start (falder tilbage på medlemsrollen) */
+  DISCORD_PING_ROLE_ID?: string;
 }
 
 export interface ApiContext {

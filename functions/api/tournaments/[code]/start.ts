@@ -92,22 +92,27 @@ export async function onRequestPost(
     await resolveByes(ctx.env.DB, tournament.id);
     await markReadyMatches(ctx.env.DB, tournament.id);
 
-    // Bracket er live — drop den på Discord med deltagerlisten
+    // Bracket er live — drop den på Discord med deltagerlisten og ping rollen
     const tags = entrantList.map((e) => e.gamertag).join(", ");
+    const pingRoleId = ctx.env.DISCORD_PING_ROLE_ID || ctx.env.DISCORD_MEMBER_ROLE_ID;
     context.waitUntil(
-      notifyDiscord(ctx.env, {
-        title: `🔥 Bracket er LIVE: ${tournament.name}`,
-        description: `${gameLabel(tournament.game)} · ${entrantList.length} spillere · double elimination`,
-        color: DISCORD_COLORS.coal,
-        url: bracketUrl(ctx.request, code),
-        fields: [
-          {
-            name: "Deltagere",
-            value: tags.length > 1000 ? `${tags.slice(0, 1000)}…` : tags,
-          },
-        ],
-        footer: { text: "Følg bracket live på fgcnord.dk" },
-      }),
+      notifyDiscord(
+        ctx.env,
+        {
+          title: `🔥 Bracket er LIVE: ${tournament.name}`,
+          description: `${gameLabel(tournament.game)} · ${entrantList.length} spillere · double elimination`,
+          color: DISCORD_COLORS.coal,
+          url: bracketUrl(ctx.request, code),
+          fields: [
+            {
+              name: "Deltagere",
+              value: tags.length > 1000 ? `${tags.slice(0, 1000)}…` : tags,
+            },
+          ],
+          footer: { text: "Følg bracket live på fgcnord.dk" },
+        },
+        { pingRoleId },
+      ),
     );
 
     return json(

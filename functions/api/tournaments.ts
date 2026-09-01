@@ -69,23 +69,29 @@ export async function onRequestPost(
       .bind(id, name, game, format, body.startgg_slug || null, joinCode, body.start_at ?? null, now)
       .run();
 
-    // Offentliggør turneringen på Discord med join-link
+    // Offentliggør turneringen på Discord med join-link — ping @Medlem-rollen,
+    // så folk får besked om at tilmelde sig
+    const pingRoleId = ctx.env.DISCORD_PING_ROLE_ID || ctx.env.DISCORD_MEMBER_ROLE_ID;
     context.waitUntil(
-      notifyDiscord(ctx.env, {
-        title: `📅 Ny turnering: ${name}`,
-        description: `${gameLabel(game)} — tilmelding er åben! Scan QR-koden på siden eller tryk på linket.`,
-        color: DISCORD_COLORS.brick,
-        url: tournamentUrl(ctx.request, joinCode),
-        fields: body.start_at
-          ? [
-              {
-                name: "Runde 1 starter",
-                value: `<t:${Math.floor(body.start_at / 1000)}:t> — check-in åbner 15 min før`,
-                inline: true,
-              },
-            ]
-          : undefined,
-      }),
+      notifyDiscord(
+        ctx.env,
+        {
+          title: `📅 Ny turnering: ${name}`,
+          description: `${gameLabel(game)} — tilmelding er åben! Scan QR-koden på siden eller tryk på linket.`,
+          color: DISCORD_COLORS.brick,
+          url: tournamentUrl(ctx.request, joinCode),
+          fields: body.start_at
+            ? [
+                {
+                  name: "Runde 1 starter",
+                  value: `<t:${Math.floor(body.start_at / 1000)}:t> — check-in åbner 15 min før`,
+                  inline: true,
+                },
+              ]
+            : undefined,
+        },
+        { pingRoleId },
+      ),
     );
 
     return json(
@@ -102,6 +108,34 @@ export async function onRequestPost(
           created_at: now,
         },
       },
+      { headers: corsHeaders(origin) },
+    );
+  } catch (err) {
+    return handleError(err, origin);
+  }
+}
+
+export async function onRequestGet(
+  context: EventContext<Env, never, { ctx: ApiContext }>,
+): Promise<Response> {
+  // Admin-liste over turneringer (nyeste først)
+  const ctx = context.data.ctx;
+  const origin = getOrigin(ctx.request);
+  try {
+    requireAdmin(ctx);
+
+    const tournaments = await ctx.env.DB.prepare(
+      `SELECT t.id, t.name, t.game, t.format, t.status, t.join_code,
+              t.startgg_slug, t.start_at, t.created_at,
+              (SELECT COUNT(*) FROM entries e WHERE e.tournament_id = t.id) AS entrants,
+              (SELECT COUNT(*) FROM entries e WHERE e.tournament_id = t.id AND e.checked_in = 1) AS checked_in
+       FROM tournaments t
+       ORDER BY t.created_at DESC
+       LIMIT 50`,
+    ).all();
+
+    return json(
+      { tournaments: tournaments.results || [] },
       { headers: corsHeaders(origin) },
     );
   } catch (err) {

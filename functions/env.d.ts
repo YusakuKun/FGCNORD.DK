@@ -21,4 +21,6 @@ interface Env {
   DISCORD_GUILD_ID?: string;
   /** Rolle-ID for medlemsrollen på serveren (valgfri — ellers tæller server-medlemskab) */
   DISCORD_MEMBER_ROLE_ID?: string;
+  /** Rolle der pinges ved nye turneringer/bracket-start (valgfri — ellers bruges medlemsrollen) */
+  DISCORD_PING_ROLE_ID?: string;
 }

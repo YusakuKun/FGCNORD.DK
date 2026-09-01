@@ -41,10 +41,15 @@ export function gameLabel(game: string): string {
 /**
  * Post et embed til Discord. Fejler stille (logger kun) — Discord må aldrig
  * kunne nedbryde turneringsflowet.
+ *
+ * `pingRoleId` pinger en rolle (fx @Medlem) oven på embed'et. Vi sender
+ * `allowed_mentions` med, så KUN netop den rolle kan pinges — aldrig
+ * @everyone/@here, uanset hvad der smutter igennem.
  */
 export async function notifyDiscord(
   env: Env,
   embed: DiscordEmbed,
+  opts?: { pingRoleId?: string },
 ): Promise<void> {
   const webhook = env.DISCORD_WEBHOOK_URL;
   if (!webhook) return;
@@ -54,6 +59,12 @@ export async function notifyDiscord(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         username: "FGC Nord Bracket",
+        ...(opts?.pingRoleId
+          ? {
+              content: `<@&${opts.pingRoleId}>`,
+              allowed_mentions: { roles: [opts.pingRoleId] },
+            }
+          : {}),
         embeds: [
           {
             ...embed,
