@@ -19,9 +19,10 @@ interface StageCardProps {
   state: CardState;
   onSelect: () => void;
   actionLabel: string; // fx "Strike Battlefield" til aria-label
+  dsrLabel?: string; // fx "Spillet" for racing-spil (ingen bane-gentagelser)
 }
 
-export function StageCard({ stage, state, onSelect, actionLabel }: StageCardProps) {
+export function StageCard({ stage, state, onSelect, actionLabel, dsrLabel = "DSR" }: StageCardProps) {
   const interactive = state === "available";
   const dimmed =
     state === "striked" || state === "banned" || state === "idle" || state === "locked";
@@ -37,7 +38,9 @@ export function StageCard({ stage, state, onSelect, actionLabel }: StageCardProp
       aria-disabled={state === "dsr" ? true : undefined}
       aria-label={
         state === "dsr"
-          ? `${stage.name} – spærret af DSR (du har selv vundet på denne stage)`
+          ? dsrLabel === "DSR"
+            ? `${stage.name} – spærret af DSR (du har selv vundet på denne stage)`
+            : `${stage.name} – allerede spillet i serien (ingen gentagelser)`
           : state === "locked"
             ? `${stage.name} – counterpick-stage, ikke med i game 1`
             : interactive
@@ -124,11 +127,11 @@ export function StageCard({ stage, state, onSelect, actionLabel }: StageCardProp
         </motion.div>
       )}
 
-      {/* DSR-lås */}
+      {/* DSR-lås / spillet-bane */}
       {state === "dsr" && (
         <div className="absolute right-1.5 top-1.5 flex items-center gap-1 rounded-full bg-olive px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-cream">
           <Lock className="h-3 w-3" aria-hidden="true" />
-          DSR
+          {dsrLabel}
         </div>
       )}
 
@@ -148,7 +151,7 @@ export function StageCard({ stage, state, onSelect, actionLabel }: StageCardProp
       {state === "picked" && (
         <motion.span
           initial={{ y: 8, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
+          animate={{ y: 8, opacity: 0 }}
           className="absolute right-1.5 top-1.5 rounded-full bg-brick px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-coal"
         >
           Valgt
