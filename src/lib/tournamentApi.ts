@@ -181,6 +181,26 @@ export async function adminStartTournament(adminKey: string, code: string) {
   ) as Promise<{ success: boolean; matches: number }>;
 }
 
+/* ---------- Admin: lobby ---------- */
+
+export async function adminOpenLobby(
+  adminKey: string,
+  body: { title: string; game: string; stations?: number },
+) {
+  return fetchAdmin("/lobby", adminKey, {
+    method: "POST",
+    body: JSON.stringify(body),
+  }) as Promise<{ success: boolean; lobby: { id: string; title: string } }>;
+}
+
+export async function adminCloseLobby(adminKey: string, lobbyId: string) {
+  return fetchAdmin(
+    `/lobby/${encodeURIComponent(lobbyId)}/close`,
+    adminKey,
+    { method: "POST" },
+  ) as Promise<{ success: boolean }>;
+}
+
 export interface Match {
   id: string;
   tournament_id: string;

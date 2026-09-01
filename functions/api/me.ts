@@ -50,6 +50,7 @@ export async function onRequestGet(
         isMember,
         memberSince: row?.member_since ?? null,
         player: {
+          id: row?.id ?? player.id,
           gamertag: row?.gamertag ?? player.gamertag,
           username: row?.discord_username ?? null,
           avatarUrl,
