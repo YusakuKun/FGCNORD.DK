@@ -4,10 +4,12 @@ import { Layout } from "@/components/Layout";
 import { Admin } from "@/pages/Admin";
 import { BlivMedlem } from "@/pages/BlivMedlem";
 import { Home } from "@/pages/Home";
+import { Lobby } from "@/pages/Lobby";
 import { Om } from "@/pages/Om";
 import { Placeholder } from "@/pages/Placeholder";
 import { PowerRankingDetail } from "@/pages/PowerRankingDetail";
 import { PowerRankings } from "@/pages/PowerRankings";
+import { Rangliste } from "@/pages/Rangliste";
 import { StageStrike } from "@/pages/StageStrike";
 import { TournamentBracket } from "@/pages/TournamentBracket";
 import { TournamentLanding } from "@/pages/TournamentLanding";
@@ -22,6 +24,8 @@ function App() {
       <Route path="/" element={<Layout />}>
         <Route index element={<Home />} />
         <Route path="turneringer" element={<Turneringer />} />
+        <Route path="lobby" element={<Lobby />} />
+        <Route path="rangliste" element={<Rangliste />} />
         <Route path="stage-strike" element={<StageStrike />} />
         <Route path="t/:code" element={<TournamentLanding />} />
         <Route path="t/:code/mig" element={<TournamentMe />} />
