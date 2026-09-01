@@ -56,7 +56,7 @@ const steps = [
   {
     icon: BadgeCheck,
     title: "Du er medlem",
-    text: "Vi tjekker automatisk, at du er på serveren — og så er du medlem. Tilmeld dig turneringer og følg dine resultater.",
+    text: "Medlemskab er bare en rolle på Discord'en, der viser, at du kæmper med til weeklies i Nordjylland. Vi spotter rollen automatisk — mere er der ikke i det.",
   },
 ];
 
@@ -76,11 +76,11 @@ const faqs = [
   },
   {
     q: "Hvorfor skal jeg bruge Discord?",
-    a: "Discord er hjertet af fællesskabet: events, turneringstilmelding, afstemninger og det sociale foregår der. Når du logger ind med Discord her på siden, ved vi at du er en del af fællesskabet — det er hele medlemskabet.",
+    a: "Discord er hjertet af fællesskabet: events, turneringstilmelding, afstemninger og det sociale foregår der. Når du er på serveren og kæmper med til weeklies, får du medlemsrollen — og dén rolle er hele medlemskabet. Ikke mere hokus end det.",
   },
   {
     q: "Hvad deler I med Discord — og hvad deler Discord med jer?",
-    a: "Vi beder kun om adgang til dit Discord-brugernavn og avatar (scope: identify). Vi kan ikke læse dine beskeder, og vi kan ikke skrive som dig. Vi tjekker kun, om du er medlem af vores server.",
+    a: "Vi beder kun om adgang til dit Discord-brugernavn og avatar (scope: identify). Vi kan ikke læse dine beskeder, og vi kan ikke skrive som dig. Vi tjekker kun, om du har medlemsrollen på vores server.",
   },
   {
     q: "Kan man prøve at være med, før man joiner?",
@@ -145,7 +145,7 @@ function DiscordAuthCard() {
                 </Badge>
               ) : (
                 <Badge className="mt-1 bg-brick text-coal hover:bg-brick-soft">
-                  Logget ind — mangler Discord-serveren
+                  Logget ind — mangler medlemsrollen
                 </Badge>
               )}
             </div>
@@ -158,8 +158,9 @@ function DiscordAuthCard() {
           ) : (
             <div className="mt-4">
               <p className="text-sm text-cream/75">
-                Du er logget ind, men vi kan ikke finde dig på Discord-serveren
-                endnu. Join den, og genindlæs siden — så går det automatisk.
+                Du er logget ind, men du har ikke medlemsrollen på
+                Discord-serveren endnu. Join serveren og få rollen — så går
+                det automatisk.
               </p>
               <Button
                 asChild
@@ -343,8 +344,8 @@ export function BlivMedlem() {
           </div>
           <p className="mx-auto mt-8 flex max-w-3xl items-center justify-center gap-2 text-sm text-ink/60">
             <Sparkles className="h-4 w-4 text-brick" aria-hidden="true" />
-            Medlemskab spores automatisk via vores Discord-server — intet
-            papirarbejde, ingen manuelle lister.
+            Medlemskab spores automatisk via medlemsrollen på vores
+            Discord-server — intet papirarbejde, ingen manuelle lister.
           </p>
         </div>
       </section>
