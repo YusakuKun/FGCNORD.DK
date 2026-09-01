@@ -46,8 +46,8 @@ const GALLERY = [
   },
   {
     src: "/gallery-himmerlan-melee.jpg",
-    alt: "Top 8-grafik for Melee ved HimmerLAN Fix",
-    caption: "HimmerLAN Fix · Melee · Top 8",
+    alt: "Top 8-grafik for Melee Singles ved HimmerLAN IGEN",
+    caption: "HimmerLAN IGEN · Melee · Top 8",
   },
   {
     src: "/gallery-fest.jpg",
@@ -261,7 +261,7 @@ export function Home() {
               transition={{ duration: 0.7, ease: EASE, delay: reduced ? 0 : 0.1 }}
               className="mt-6 text-[16px] leading-[1.7] text-olive md:text-[17px]"
             >
-              Vi er en grassroots-forening stiftet af spillere i Nordjylland. Vi afholder ugentlige
+              Vi er et grassroots-fællesskab startet af spillere i Nordjylland. Vi afholder ugentlige
               turneringer, træningsaftener og større events — i lokaler i Aalborg. Hos os er der
               plads til både den nysgerrige nybegynder og den garvede turneringsspiller.
             </motion.p>
@@ -277,7 +277,7 @@ export function Home() {
                 >
                   <motion.span
                     initial={from({ rotate: -90, scale: 0 })}
-                    whileInView={{ rotate: 0, scale: 1 }}
+                    whileInView={{ rotate: 1, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ type: "spring", stiffness: 300, damping: 15, delay: reduced ? 0 : i * 0.15 }}
                     className="mt-1"
@@ -302,7 +302,7 @@ export function Home() {
                 to="/om"
                 className={`inline-flex items-center gap-2 rounded-full border-[3px] border-ink bg-transparent px-7 py-3 text-[15px] font-semibold uppercase tracking-[0.02em] text-ink transition-all duration-200 hover:-translate-y-0.5 hover:bg-ink hover:text-cream ${FOCUS_LIGHT}`}
               >
-                Læs om foreningen <ArrowRight size={18} aria-hidden="true" />
+                Læs om fællesskabet <ArrowRight size={18} aria-hidden="true" />
               </Link>
             </motion.div>
           </div>

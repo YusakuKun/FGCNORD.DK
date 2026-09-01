@@ -1,11 +1,8 @@
 import { motion } from "framer-motion";
 import {
   ArrowRight,
-  Coins,
   FileText,
-  HandCoins,
   Heart,
-  Landmark,
   Mail,
   Shield,
   UserPlus,
@@ -38,9 +35,9 @@ const milestones = [
   },
   {
     year: "2024",
-    title: "Foreningen stiftes",
+    title: "FGC Nord bliver til",
     description:
-      "FGC Nord bliver en officiel forening med vedtægter, bestyrelse og medlemskab.",
+      "Fællesskabet får et navn, en Discord-server og faste ugentlige meetups.",
   },
   {
     year: "2025",
@@ -73,19 +70,19 @@ const values = [
 
 const board = [
   {
-    role: "Formand",
+    role: "Primus motor",
     avatar: "/board-avatars/avatar-1.png",
   },
   {
-    role: "Næstformand",
+    role: "Eventansvarlig",
     avatar: "/board-avatars/avatar-2.png",
   },
   {
-    role: "Kasserer",
+    role: "TO & bracket-hjælp",
     avatar: "/board-avatars/avatar-3.png",
   },
   {
-    role: "Eventansvarlig",
+    role: "SoMe & grafik",
     avatar: "/board-avatars/avatar-4.png",
   },
   {
@@ -98,9 +95,9 @@ export function Om() {
   return (
     <>
       <PageHeader
-        eyebrow="Om foreningen"
+        eyebrow="Om fællesskabet"
         title="FGC Nord"
-        description="Nordjyllands platform fighter-forening. Drevet af frivillige, drevet af passion for fighting games."
+        description="Nordjyllands platform fighter-community. Drevet af frivillige, drevet af passion for fighting games."
       />
 
       {/* Mission */}
@@ -153,7 +150,7 @@ export function Om() {
           <SectionHeader
             eyebrow="Historie"
             title="Vores rejse"
-            description="Fra en håndfuld venner i en kælder til en officiel forening med events hele året rundt."
+            description="Fra en håndfuld venner i en kælder til et organiseret community med events hele året rundt."
             centered
             light
             className="mx-auto"
@@ -240,9 +237,9 @@ export function Om() {
       <section className="section-padding bg-coal text-cream">
         <div className="container-site px-4 sm:px-6 lg:px-8">
           <SectionHeader
-            eyebrow="Bestyrelse"
+            eyebrow="Crew"
             title="Menneskerne bag FGC Nord"
-            description="Vi er en helt ny forening. Bestyrelsen vælges ved den stiftende generalforsamling — måske er der en plads til dig?"
+            description="Alt drives af frivillige fra community'et — og der er altid plads til flere hænder. Måske er der en rolle til dig?"
             centered
             light
             className="mx-auto"
@@ -268,7 +265,7 @@ export function Om() {
                 </h3>
                 <p className="text-brick-soft">{member.role}</p>
                 <p className="mt-1 text-sm text-cream/60">
-                  Vælges ved stiftende generalforsamling
+                  Frivillig crew-rolle — åben for alle
                 </p>
               </motion.div>
             ))}
@@ -306,31 +303,31 @@ export function Om() {
         </div>
       </section>
 
-      {/* Bylaws & folkeoplysning */}
+      {/* Sådan virker vi + medlemskab via Discord */}
       <section className="section-padding bg-cream">
         <div className="container-site px-4 sm:px-6 lg:px-8">
           <div className="grid items-start gap-12 lg:grid-cols-2">
             <div>
               <SectionHeader
-                eyebrow="Vedtægter"
-                title="Ordentlighed og transparens"
-                description="FGC Nord er en demokratisk forening med vedtægter, årlige generalforsamlinger og transparent økonomi."
+                eyebrow="Sådan virker vi"
+                title="Åbent og uden hokus-pokus"
+                description="FGC Nord er et fællesskab, ikke en forening — ingen kontingent, ingen generalforsamling. Bare mennesker, der elsker platform fighters."
               />
               <div className="mt-6 space-y-4">
                 <div className="flex items-start gap-3">
                   <FileText className="mt-1 h-5 w-5 shrink-0 text-brick" aria-hidden="true" />
                   <p className="text-ink/70">
-                    Vedtægterne fastlægger formålet med foreningen, medlemskab,
-                    kontingent og bestyrelsens ansvar. De kan altid fremsendes —
-                    skriv til os, hvis du vil læse dem.
+                    Vi har fælles regler for god opførsel på events og på
+                    Discord. De er skrevet i fællesskab, ligger åbent på
+                    serveren, og gælder for alle — nye som gamle.
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
                   <Users className="mt-1 h-5 w-5 shrink-0 text-brick" aria-hidden="true" />
                   <p className="text-ink/70">
-                    Generalforsamlingen afholdes én gang årligt og er
-                    foreningens øverste myndighed. Her har alle medlemmer
-                    stemmeret.
+                    Beslutninger om events, turneringer og alt muligt andet
+                    tages i det åbne på Discord. Alle medlemmer kan følge med,
+                    komme med idéer og være med til at stemme.
                   </p>
                 </div>
               </div>
@@ -345,7 +342,7 @@ export function Om() {
               </Button>
             </div>
 
-            {/* Folkeoplysningsstøtte */}
+            {/* Medlemskab via Discord */}
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -354,30 +351,30 @@ export function Om() {
               className="rounded-2xl border-2 border-ink bg-coal p-8 text-cream shadow-poster-lg"
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-cream/20 bg-ink">
-                  <Landmark className="h-6 w-6 text-brick-soft" aria-hidden="true" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg border-2 border-cream/20 bg-[#5865F2]">
+                  <DiscordIcon size={24} />
                 </div>
-                <h3 className="font-display text-2xl">Folkeoplysningsstøtte</h3>
+                <h3 className="font-display text-2xl">Medlemskab = Discord</h3>
               </div>
               <p className="mt-4 text-cream/80">
-                Som forening under stiftelse kan FGC Nord søge
-                folkeoplysningsstøtte i Aalborg Kommune. For hvert ungt medlem
-                under 25 kan foreningen modtage omkring 370 kr. om året i
-                tilskud — helt uden at det koster medlemmet noget.
+                Hos os er medlemskab bare en rolle på Discord'en, der viser, at
+                du kæmper med til weeklies i Nordjylland. Det er gratis, og vi
+                spotter rollen automatisk, når du logger ind med Discord her på
+                siden — så kan du tilmelde dig turneringer og følge dine
+                resultater.
               </p>
               <ul className="mt-5 space-y-3">
                 <li className="flex items-start gap-3">
-                  <Coins className="mt-0.5 h-5 w-5 shrink-0 text-brick-soft" aria-hidden="true" />
+                  <Heart className="mt-0.5 h-5 w-5 shrink-0 text-brick-soft" aria-hidden="true" />
                   <span className="text-sm text-cream/80">
-                    Dit medlemskab udløser kommunalt tilskud, der går direkte
-                    til events, udstyr og lokaler.
+                    Ingen kontingent — fællesskabet er gratis for alle.
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <HandCoins className="mt-0.5 h-5 w-5 shrink-0 text-brick-soft" aria-hidden="true" />
+                  <Shield className="mt-0.5 h-5 w-5 shrink-0 text-brick-soft" aria-hidden="true" />
                   <span className="text-sm text-cream/80">
-                    Jo flere unge medlemmer vi er, desto mere kan vi give
-                    tilbage til communityet.
+                    Din Discord-konto er din medlemsprofil. Du bestemmer selv,
+                    hvad du deler.
                   </span>
                 </li>
               </ul>
@@ -387,7 +384,7 @@ export function Om() {
                 className="mt-6 border-2 border-cream/40 bg-transparent text-cream hover:bg-cream/10 hover:text-cream"
               >
                 <Link to="/bliv-medlem">
-                  Hjælp ved at melde dig ind
+                  Se hvordan du joiner
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
@@ -402,7 +399,7 @@ export function Om() {
           <SectionHeader
             eyebrow="Kontakt"
             title="Vil du vide mere?"
-            description="Har du spørgsmål til vedtægter, medlemskab eller bestyrelsesarbejde? Tag fat i os — vi svarer hurtigt."
+            description="Har du spørgsmål til events, medlemskab eller vil du være en del af crew'et? Tag fat i os — vi svarer hurtigt."
             centered
             className="mx-auto"
           />

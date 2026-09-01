@@ -35,7 +35,7 @@ function HeroSection() {
             >
               <span className="h-2 w-2 animate-pulse rounded-full bg-brick" />
               <span className="text-[12px] font-bold uppercase tracking-[0.14em] text-ink">
-                Forening for platform fighters
+                Fællesskab for platform fighters
               </span>
             </motion.div>
 

@@ -7,7 +7,7 @@ const NAV = [
   { to: "/", label: "Forside" },
   { to: "/turneringer", label: "Turneringer" },
   { to: "/stage-strike", label: "Stage Strike" },
-  { to: "/om", label: "Om foreningen" },
+  { to: "/om", label: "Om fællesskabet" },
   { to: "/bliv-medlem", label: "Bliv medlem" },
 ];
 
@@ -22,7 +22,7 @@ function FacebookIcon() {
 function InstagramIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M12 2.2c3.2 0 3.58.01 4.85.07 3.25.15 4.77 1.7 4.92 4.92.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.15 3.23-1.66 4.77-4.92 4.92-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-3.26-.15-4.77-1.7-4.92-4.92C2.21 15.58 2.2 15.2 2.2 12s.01-3.58.07-4.85C2.42 3.92 3.94 2.38 7.15 2.27 8.42 2.21 8.8 2.2 12 2.2Zm0 3.68a6.12 6.12 0 1 0 0 12.24 6.12 6.12 0 0 0 0-12.24Zm0 10.1a3.98 3.98 0 1 1 0-7.96 3.98 3.98 0 0 1 0 7.96Zm6.36-11.85a1.43 1.43 0 1 0 0 2.86 1.43 1.43 0 0 0 0-2.86Z" />
+      <path d="M12 2.2c3.2 0 3.58.01 4.85.07 3.25.15 4.77 1.7 4.92 4.92.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.15 3.23-1.66 4.77-4.92 4.92-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-3.26-.15-1.65-.07-4.92-4.92C2.21 15.58 2.2 15.2 2.2 12s.01-3.58.07-4.85C2.42 3.92 3.94 2.38 7.15 2.27 8.42 2.21 8.8 2.2 12 2.2Zm0 3.68a6.12 6.12 0 1 0 0 12.24 6.12 6.12 0 0 0 0-12.24Zm0 10.1a3.98 3.98 0 1 1 0-7.96 3.98 3.98 0 0 1 0 7.96Zm6.36-11.85a1.43 1.43 0 1 0 0 2.86 1.43 1.43 0 0 0 0-2.86Z" />
     </svg>
   );
 }
@@ -100,10 +100,10 @@ export function Footer() {
         </div>
 
         <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t-2 border-cream/15 pt-6 text-[14px] text-cream/60 md:flex-row">
-          <p>© 2026 FGC Nord · Forening under stiftelse · CVR anmeldes</p>
+          <p>© 2026 FGC Nord · Fællesskab drevet af frivillige</p>
           <div className="flex gap-6">
-            <Link to="/om" className="transition-colors hover:text-brick-soft">
-              Vedtægter
+            <Link to="/pr" className="transition-colors hover:text-brick-soft">
+              Rankings
             </Link>
             <Link to="/om" className="transition-colors hover:text-brick-soft">
               Privatliv

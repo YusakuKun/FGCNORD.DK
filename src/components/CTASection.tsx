@@ -12,7 +12,7 @@ interface CTASectionProps {
 /** Coal-blok m. H2 + to knapper — genbruges på forside, turneringer og om */
 export function CTASection({
   title = "KLAR TIL AT JOIN'E?",
-  text = "Bliv medlem for 150 kr./år (75 kr. for under 18) — eller smid et hej i Discord'en og kom forbi en weekly.",
+  text = "Det er gratis at være med — join Discord'en, kom forbi en weekly, og du er en del af fællesskabet.",
 }: CTASectionProps) {
   return (
     <section className="relative bg-coal text-cream">
