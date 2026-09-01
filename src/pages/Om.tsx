@@ -233,7 +233,7 @@ export function Om() {
         </div>
       </section>
 
-      {/* Crew */}
+      {/* Board */}
       <section className="section-padding bg-coal text-cream">
         <div className="container-site px-4 sm:px-6 lg:px-8">
           <SectionHeader
@@ -270,7 +270,7 @@ export function Om() {
               </motion.div>
             ))}
 
-            {/* Vil du være med? */}
+            {/* Vil du stille op? */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -282,7 +282,7 @@ export function Om() {
                 <UserPlus className="h-10 w-10 text-brick-soft" aria-hidden="true" />
               </div>
               <h3 className="mt-4 font-heading text-lg font-bold">
-                Vil du være med?
+                Vil du stille op?
               </h3>
               <p className="mt-1 text-sm text-cream/70">
                 Drømmer du om at forme Nordjyllands stærkeste
@@ -357,10 +357,11 @@ export function Om() {
                 <h3 className="font-display text-2xl">Medlemskab = Discord</h3>
               </div>
               <p className="mt-4 text-cream/80">
-                Hos os er du medlem, når du er på vores Discord-server. Det er
-                gratis, og vi tracker medlemskab automatisk, når du logger ind
-                med Discord her på siden — så kan du tilmelde dig turneringer
-                og følge dine resultater.
+                Hos os er medlemskab bare en rolle på Discord'en, der viser, at
+                du kæmper med til weeklies i Nordjylland. Det er gratis, og vi
+                spotter rollen automatisk, når du logger ind med Discord her på
+                siden — så kan du tilmelde dig turneringer og følge dine
+                resultater.
               </p>
               <ul className="mt-5 space-y-3">
                 <li className="flex items-start gap-3">
