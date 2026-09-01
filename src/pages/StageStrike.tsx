@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import type { GameType, Player, Stage } from "@/types";
 
 type StrikeStage = Stage & { starter: boolean };
+type StrikeGame = GameType | "mkwii";
 
 const ULTIMATE_STAGES: StrikeStage[] = [
   // Starters (game 1)
@@ -44,9 +45,53 @@ const MELEE_STAGES: StrikeStage[] = [
   { id: "ps", name: "Pokémon Stadium", image: "/melee-thumbs/pokemon-stadium.png", starter: false },
 ];
 
-const GAME_CONFIG: Record<GameType, { label: string; bans: number; stages: StrikeStage[] }> = {
+// MKWii: alle 32 baner (16 nitro + 16 retro). Competitive praksis:
+// løb 1 trækkes tilfældigt (MKWs roulette), taberen vælger derefter,
+// ingen bane-gentagelser i serien, ingen track bans i vanilje-MK.
+const MKWII_TRACKS: StrikeStage[] = [
+  // Nitro
+  { id: "lc", name: "Luigi Circuit", image: "", starter: true },
+  { id: "mmm", name: "Moo Moo Meadows", image: "", starter: true },
+  { id: "mg", name: "Mushroom Gorge", image: "", starter: true },
+  { id: "tf", name: "Toad's Factory", image: "", starter: true },
+  { id: "mc", name: "Mario Circuit", image: "", starter: true },
+  { id: "cm", name: "Coconut Mall", image: "", starter: true },
+  { id: "dks", name: "DK Summit", image: "", starter: true },
+  { id: "wgm", name: "Wario's Gold Mine", image: "", starter: true },
+  { id: "dc", name: "Daisy Circuit", image: "", starter: true },
+  { id: "kc", name: "Koopa Cape", image: "", starter: true },
+  { id: "mt", name: "Maple Treeway", image: "", starter: true },
+  { id: "gv", name: "Grumble Volcano", image: "", starter: true },
+  { id: "ddr", name: "Dry Dry Ruins", image: "", starter: true },
+  { id: "mh", name: "Moonview Highway", image: "", starter: true },
+  { id: "bc", name: "Bowser's Castle", image: "", starter: true },
+  { id: "rr", name: "Rainbow Road", image: "", starter: true },
+  // Retro
+  { id: "rpb", name: "GCN Peach Beach", image: "", starter: true },
+  { id: "ryf", name: "DS Yoshi Falls", image: "", starter: true },
+  { id: "rgv2", name: "SNES Ghost Valley 2", image: "", starter: true },
+  { id: "rmr", name: "N64 Mario Raceway", image: "", starter: true },
+  { id: "rsl", name: "N64 Sherbet Land", image: "", starter: true },
+  { id: "rsgb", name: "GBA Shy Guy Beach", image: "", starter: true },
+  { id: "rds", name: "DS Delfino Square", image: "", starter: true },
+  { id: "rws", name: "GCN Waluigi Stadium", image: "", starter: true },
+  { id: "rdh", name: "DS Desert Hills", image: "", starter: true },
+  { id: "rbc3", name: "GBA Bowser Castle 3", image: "", starter: true },
+  { id: "rdkjp", name: "N64 DK's Jungle Parkway", image: "", starter: true },
+  { id: "rmc", name: "GCN Mario Circuit", image: "", starter: true },
+  { id: "rmc3", name: "SNES Mario Circuit 3", image: "", starter: true },
+  { id: "rpg", name: "DS Peach Gardens", image: "", starter: true },
+  { id: "rdkm", name: "GCN DK Mountain", image: "", starter: true },
+  { id: "rbc", name: "N64 Bowser's Castle", image: "", starter: true },
+];
+
+const GAME_CONFIG: Record<
+  StrikeGame,
+  { label: string; bans: number; stages: StrikeStage[]; racing?: boolean }
+> = {
   ultimate: { label: "Ultimate", bans: 3, stages: ULTIMATE_STAGES },
   melee: { label: "Melee", bans: 1, stages: MELEE_STAGES },
+  mkwii: { label: "Mario Kart Wii", bans: 0, stages: MKWII_TRACKS, racing: true },
 };
 
 type Phase =
@@ -67,13 +112,14 @@ interface Snapshot {
   bans: string[];
   pickedStage: string | null;
   currentGame: number;
+  playedTracks: string[];
   log: string[];
 }
 
 const other = (i: 0 | 1): 0 | 1 => (i === 0 ? 1 : 0);
 
 export function StageStrike() {
-  const [game, setGame] = useState<GameType>("ultimate");
+  const [game, setGame] = useState<StrikeGame>("ultimate");
   const [bestOf, setBestOf] = useState<3 | 5>(3);
   const [phase, setPhase] = useState<Phase>("choose-first");
   const [players, setPlayers] = useState<Player[]>([
@@ -86,6 +132,7 @@ export function StageStrike() {
   const [bans, setBans] = useState<string[]>([]);
   const [pickedStage, setPickedStage] = useState<string | null>(null);
   const [currentGame, setCurrentGame] = useState(1);
+  const [playedTracks, setPlayedTracks] = useState<string[]>([]);
   const [log, setLog] = useState<string[]>([
     "Vælg format og hvem der striker først – eller lad terningen afgøre det.",
   ]);
@@ -104,6 +151,7 @@ export function StageStrike() {
     bans: [...bans],
     pickedStage,
     currentGame,
+    playedTracks: [...playedTracks],
     log: [...log],
   });
 
@@ -121,6 +169,7 @@ export function StageStrike() {
       setBans(prev.bans);
       setPickedStage(prev.pickedStage);
       setCurrentGame(prev.currentGame);
+      setPlayedTracks(prev.playedTracks);
       setLog([...prev.log, "Sidste handling blev fortrudt."]);
       return h.slice(0, -1);
     });
@@ -140,11 +189,12 @@ export function StageStrike() {
     setBans([]);
     setPickedStage(null);
     setCurrentGame(1);
+    setPlayedTracks([]);
     setHistory([]);
     setLog(["Serie nulstillet. Vælg hvem der striker først."]);
   };
 
-  const switchGame = (g: GameType) => {
+  const switchGame = (g: StrikeGame) => {
     setGame(g);
     setPlayers([
       { name: "Spiller 1", score: 0, stageWins: [] },
@@ -157,8 +207,13 @@ export function StageStrike() {
     setBans([]);
     setPickedStage(null);
     setCurrentGame(1);
+    setPlayedTracks([]);
     setHistory([]);
-    setLog([`${GAME_CONFIG[g].label} valgt. Vælg hvem der striker først.`]);
+    setLog([
+      GAME_CONFIG[g].racing
+        ? `${GAME_CONFIG[g].label} valgt. Løb 1 trækkes tilfældigt – tryk på knappen når I er klar.`
+        : `${GAME_CONFIG[g].label} valgt. Vælg hvem der striker først.`,
+    ]);
   };
 
   const selectFirstStriker = (i: 0 | 1) => {
@@ -169,6 +224,17 @@ export function StageStrike() {
   };
 
   const coinFlip = () => selectFirstStriker(Math.random() < 0.5 ? 0 : 1);
+
+  // MKWii: løb 1 trækkes tilfældigt blandt endnu u-spillede baner (MKWs roulette)
+  const drawRandomTrack = () => {
+    const candidates = config.stages.filter((s) => !playedTracks.includes(s.id));
+    if (candidates.length === 0) return;
+    pushHistory();
+    const track = candidates[Math.floor(Math.random() * candidates.length)];
+    setPickedStage(track.id);
+    setPhase("reveal");
+    addLog(`Løb 1 trækker tilfældigt: ${track.name}.`);
+  };
 
   // Game 1 strike-sekvens (1-2-1): [første, anden, anden, første]
   const strikeActor = (): 0 | 1 => {
@@ -247,16 +313,29 @@ export function StageStrike() {
     setPlayers(next);
     setLastWinner(winner);
     setPickedStage(null);
+    if (stageId) setPlayedTracks((pt) => [...pt, stageId]);
 
     if (next[winner].score >= winsNeeded) {
       setPhase("over");
-      addLog(`${next[winner].name} vinder serien ${next[winner].score}-${next[other(winner)].score}!`);
+      addLog(
+        `${next[winner].name} vinder serien ${next[winner].score}-${next[other(winner)].score}!`
+      );
       return;
     }
 
     setCurrentGame((g) => g + 1);
     setStrikes([]);
     setBans([]);
+
+    if (config.racing) {
+      // MKWii: ingen bans – taberen vælger næste bane direkte
+      setPhase("pick");
+      addLog(
+        `${next[winner].name} vandt Løb ${currentGame} på ${stageName}. ${next[other(winner)].name} (taber) vælger næste bane – ingen gentagelser.`
+      );
+      return;
+    }
+
     setPhase("ban");
     addLog(
       `${next[winner].name} vandt Game ${currentGame} på ${stageName}. Vinderen banner ${config.bans} stage${config.bans > 1 ? "s" : ""}.`
@@ -295,6 +374,11 @@ export function StageStrike() {
     }
     if (phase === "pick") {
       if (bans.includes(stage.id)) return "banned";
+      if (config.racing) {
+        // MKWii: ingen bane-gentagelser – allerede spillede baner er låst
+        if (playedTracks.includes(stage.id)) return "dsr";
+        return "available";
+      }
       if (
         lastWinner !== null &&
         players[other(lastWinner)].stageWins.includes(stage.id)
@@ -325,7 +409,9 @@ export function StageStrike() {
   const statusText = (): string => {
     switch (phase) {
       case "choose-first":
-        return "Vælg hvem der striker først";
+        return config.racing
+          ? "Træk en tilfældig bane til løb 1"
+          : "Vælg hvem der striker først";
       case "strike": {
         const a = strikeActor();
         const n = strikesLeftForActor();
@@ -336,13 +422,18 @@ export function StageStrike() {
           ? `${players[lastWinner].name} (vinder) banner ${config.bans - bans.length} stage${config.bans - bans.length > 1 ? "s" : ""}`
           : "";
       case "pick":
+        if (config.racing) {
+          return lastWinner !== null
+            ? `${players[other(lastWinner)].name} (taber) vælger bane – ingen gentagelser`
+            : "";
+        }
         return lastWinner !== null
           ? `${players[other(lastWinner)].name} (taber) vælger stage – DSR aktiv`
           : "";
       case "reveal":
-        return "Stage valgt – klar til kamp!";
+        return config.racing ? "Bane valgt – klar til løb!" : "Stage valgt – klar til kamp!";
       case "report":
-        return "Hvem vandt gamet?";
+        return config.racing ? "Hvem vandt løbet?" : "Hvem vandt gamet?";
       case "over":
         return `${players.find((p) => p.score >= winsNeeded)?.name ?? ""} vinder serien!`;
     }
@@ -416,8 +507,9 @@ export function StageStrike() {
             transition={{ duration: 0.6, delay: 0.16 }}
             className="mt-3 max-w-xl text-[15px] leading-relaxed text-cream/90 drop-shadow md:text-base"
           >
-            Stream-overlay til stage striking i Smash Ultimate og Melee. Værktøjet
-            styrer 1-2-1, bans og DSR – I skal bare spille.
+            Stream-overlay til stage striking i Smash Ultimate og Melee – og
+            banevalg i Mario Kart Wii. Værktøjet styrer 1-2-1, bans, DSR og
+            tilfældig trækning – I skal bare spille.
           </motion.p>
         </div>
       </div>
@@ -433,7 +525,7 @@ export function StageStrike() {
                 aria-label="Vælg spil"
                 className="flex gap-1 rounded-xl border-2 border-brick/30 bg-ink/60 p-1.5"
               >
-                {(["ultimate", "melee"] as GameType[]).map((g) => (
+                {(["ultimate", "melee", "mkwii"] as StrikeGame[]).map((g) => (
                   <Button
                     key={g}
                     variant={game === g ? "default" : "ghost"}
@@ -557,7 +649,7 @@ export function StageStrike() {
                     {statusText()}
                   </p>
                   <p className="text-sm text-brick-soft">
-                    Game {currentGame} · Bo{bestOf} · {config.label}
+                    {config.racing ? "Løb" : "Game"} {currentGame} · Bo{bestOf} · {config.label}
                   </p>
                 </div>
                 {phase === "over" ? (
@@ -578,31 +670,47 @@ export function StageStrike() {
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="mb-6 grid gap-3 sm:grid-cols-3"
+                  className={cn(
+                    "mb-6 grid gap-3",
+                    config.racing ? "sm:grid-cols-1" : "sm:grid-cols-3"
+                  )}
                 >
-                  <Button
-                    size="lg"
-                    onClick={() => selectFirstStriker(0)}
-                    className="min-h-[44px] bg-brick font-bold text-coal hover:bg-brick-soft"
-                  >
-                    {players[0].name} striker først
-                  </Button>
-                  <Button
-                    size="lg"
-                    onClick={() => selectFirstStriker(1)}
-                    className="min-h-[44px] bg-brick font-bold text-coal hover:bg-brick-soft"
-                  >
-                    {players[1].name} striker først
-                  </Button>
-                  <Button
-                    size="lg"
-                    variant="outline"
-                    onClick={coinFlip}
-                    className="min-h-[44px] border-cream/30 font-bold text-cream hover:bg-cream/10"
-                  >
-                    <Dices className="mr-2 h-5 w-5" aria-hidden="true" />
-                    Plat eller krone
-                  </Button>
+                  {config.racing ? (
+                    <Button
+                      size="lg"
+                      onClick={drawRandomTrack}
+                      className="min-h-[44px] bg-brick font-bold text-coal hover:bg-brick-soft"
+                    >
+                      <Dices className="mr-2 h-5 w-5" aria-hidden="true" />
+                      Træk tilfældig bane til løb 1
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        size="lg"
+                        onClick={() => selectFirstStriker(0)}
+                        className="min-h-[44px] bg-brick font-bold text-coal hover:bg-brick-soft"
+                      >
+                        {players[0].name} striker først
+                      </Button>
+                      <Button
+                        size="lg"
+                        onClick={() => selectFirstStriker(1)}
+                        className="min-h-[44px] bg-brick font-bold text-coal hover:bg-brick-soft"
+                      >
+                        {players[1].name} striker først
+                      </Button>
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        onClick={coinFlip}
+                        className="min-h-[44px] border-cream/30 font-bold text-cream hover:bg-cream/10"
+                      >
+                        <Dices className="mr-2 h-5 w-5" aria-hidden="true" />
+                        Plat eller krone
+                      </Button>
+                    </>
+                  )}
                 </motion.div>
               )}
 
@@ -656,7 +764,7 @@ export function StageStrike() {
                       onClick={resetSeries}
                       className="min-h-[44px] bg-brick font-bold text-coal hover:bg-brick-soft"
                     >
-                      <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
+                      <RotateCcw className="mr-2 h-5 w-5" aria-hidden="true" />
                       Ny serie
                     </Button>
                   </div>
@@ -678,6 +786,7 @@ export function StageStrike() {
                   stage={stage}
                   state={cardState(stage)}
                   actionLabel={actionLabel}
+                  dsrLabel={config.racing ? "Spillet" : "DSR"}
                   onSelect={() => handleCardSelect(stage)}
                 />
               ))}
@@ -688,33 +797,76 @@ export function StageStrike() {
               <h2 className="mb-4 font-heading text-xl font-bold text-cream">
                 Sådan fungerer det
               </h2>
-              <AccordionItem title="Game 1: 1-2-1 strike">
-                <p>
-                  Kun de 5 starter-stages er i spil i game 1. Spilleren der
-                  striker først fjerner <strong>1</strong> stage, modstanderen
-                  fjerner <strong>2</strong>, og den første fjerner den sidste{" "}
-                  <strong>1</strong>. Den tilbageværende stage er game 1.
-                </p>
-              </AccordionItem>
-              <div className="mt-3">
-                <AccordionItem title="Counter-pick: vinderen banner">
-                  <p>
-                    Efter hvert game banner vinderen{" "}
-                    <strong>{config.bans} stage{config.bans > 1 ? "s" : ""}</strong>{" "}
-                    fra hele listen (inkl. counterpicks), og taberen vælger frit
-                    blandt resten.
-                  </p>
-                </AccordionItem>
-              </div>
-              <div className="mt-3">
-                <AccordionItem title="DSR – Dave's Stupid Rule">
-                  <p>
-                    Du må <strong>ikke</strong> counterpicke til en stage, du
-                    selv allerede har vundet på i serien. Stages spærret af DSR
-                    er markeret med en oliven lås i listen herover.
-                  </p>
-                </AccordionItem>
-              </div>
+              {config.racing ? (
+                <>
+                  <AccordionItem title="Løb 1: Tilfældig bane">
+                    <p>
+                      Løb 1 trækkes <strong>tilfældigt</strong> blandt alle 32
+                      baner – præcis som Mario Kart Wiis egen roulette. Ingen
+                      spillere har fordel af at vælge først.
+                    </p>
+                  </AccordionItem>
+                  <div className="mt-3">
+                    <AccordionItem title="Taberen vælger næste bane">
+                      <p>
+                        Efter hvert løb vælger <strong>taberen</strong> frit den
+                        næste bane blandt dem, der ikke er kørt endnu. Der er
+                        ingen bans i vanilje Mario Kart – det er taberens
+                        kompensation at få valget.
+                      </p>
+                    </AccordionItem>
+                  </div>
+                  <div className="mt-3">
+                    <AccordionItem title="Ingen bane-gentagelser">
+                      <p>
+                        En bane der er kørt, kan <strong>ikke</strong> vælges
+                        igen i serien – uanset hvem der vandt på den. Spillede
+                        baner er markeret med en oliven "Spillet"-lås.
+                      </p>
+                    </AccordionItem>
+                  </div>
+                  <div className="mt-3">
+                    <AccordionItem title="Standardindstillinger">
+                      <p>
+                        150cc, normale items, ingen CPU'er, alle karakterer og
+                        køretøjer tilladt. Ultra-shortcuts og glitches er ikke
+                        tilladt. Først til <strong>{winsNeeded}</strong>{" "}
+                        løbssejre (Bo{bestOf}) vinder serien.
+                      </p>
+                    </AccordionItem>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <AccordionItem title="Game 1: 1-2-1 strike">
+                    <p>
+                      Kun de 5 starter-stages er i spil i game 1. Spilleren der
+                      striker først fjerner <strong>1</strong> stage, modstanderen
+                      fjerner <strong>2</strong>, og den første fjerner den sidste{" "}
+                      <strong>1</strong>. Den tilbageværende stage er game 1.
+                    </p>
+                  </AccordionItem>
+                  <div className="mt-3">
+                    <AccordionItem title="Counter-pick: vinderen banner">
+                      <p>
+                        Efter hvert game banner vinderen{" "}
+                        <strong>{config.bans} stage{config.bans > 1 ? "s" : ""}</strong>{" "}
+                        fra hele listen (inkl. counterpicks), og taberen vælger frit
+                        blandt resten.
+                      </p>
+                    </AccordionItem>
+                  </div>
+                  <div className="mt-3">
+                    <AccordionItem title="DSR – Dave's Stupid Rule">
+                      <p>
+                        Du må <strong>ikke</strong> counterpicke til en stage, du
+                        selv allerede har vundet på i serien. Stages spærret af DSR
+                        er markeret med en oliven lås i listen herover.
+                      </p>
+                    </AccordionItem>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -725,49 +877,84 @@ export function StageStrike() {
                 Trin-for-trin
               </h3>
               <ol className="space-y-3 text-sm text-cream/80">
-                <StepItem active={phase === "choose-first"} done={firstStriker !== null} step={1}>
-                  Vælg hvem der striker først
-                </StepItem>
-                <StepItem active={phase === "strike"} done={currentGame > 1 || phase !== "strike" && firstStriker !== null && strikes.length >= 4} step={2}>
-                  Game 1: strike 1-2-1
-                </StepItem>
-                <StepItem active={phase === "report" && currentGame === 1} done={currentGame > 1} step={3}>
-                  Spil game 1 & rapporter vinder
-                </StepItem>
-                <StepItem active={phase === "ban"} step={4}>
-                  Vinder banner {config.bans} stage{config.bans > 1 ? "s" : ""}
-                </StepItem>
-                <StepItem active={phase === "pick"} step={5}>
-                  Taber vælger stage (DSR)
-                </StepItem>
-                <StepItem active={phase === "over"} step={6}>
-                  Først til {winsNeeded} vinder serien
-                </StepItem>
+                {config.racing ? (
+                  <>
+                    <StepItem active={phase === "choose-first"} done={currentGame > 1 || phase !== "choose-first"} step={1}>
+                      Træk tilfældig bane (løb 1)
+                    </StepItem>
+                    <StepItem active={phase === "report"} done={phase === "over"} step={2}>
+                      Spil løbet & rapporter vinder
+                    </StepItem>
+                    <StepItem active={phase === "pick"} step={3}>
+                      Taber vælger næste bane
+                    </StepItem>
+                    <StepItem active={phase === "over"} step={4}>
+                      Først til {winsNeeded} løbssejre
+                    </StepItem>
+                  </>
+                ) : (
+                  <>
+                    <StepItem active={phase === "choose-first"} done={firstStriker !== null} step={1}>
+                      Vælg hvem der striker først
+                    </StepItem>
+                    <StepItem active={phase === "strike"} done={currentGame > 1 || phase !== "strike" && firstStriker !== null && strikes.length >= 4} step={2}>
+                      Game 1: strike 1-2-1
+                    </StepItem>
+                    <StepItem active={phase === "report" && currentGame === 1} done={currentGame > 1} step={3}>
+                      Spil game 1 & rapporter vinder
+                    </StepItem>
+                    <StepItem active={phase === "ban"} step={4}>
+                      Vinder banner {config.bans} stage{config.bans > 1 ? "s" : ""}
+                    </StepItem>
+                    <StepItem active={phase === "pick"} step={5}>
+                      Taber vælger stage (DSR)
+                    </StepItem>
+                    <StepItem active={phase === "over"} step={6}>
+                      Først til {winsNeeded} vinder serien
+                    </StepItem>
+                  </>
+                )}
               </ol>
             </div>
 
             <div className="rounded-xl border-2 border-brick/30 bg-ink/60 p-5">
               <h3 className="mb-4 font-heading text-lg font-bold text-cream">
-                DSR-tracking
+                {config.racing ? "Spillede baner" : "DSR-tracking"}
               </h3>
-              <div className="space-y-4 text-sm">
-                {players.map((player, i) => (
-                  <div key={i}>
-                    <p className="font-semibold text-cream">{player.name}</p>
-                    {player.stageWins.length === 0 ? (
-                      <p className="text-cream/50">Ingen stage-sejre endnu</p>
-                    ) : (
-                      <ul className="mt-1 list-disc pl-4 text-cream/70">
-                        {player.stageWins.map((id, idx) => (
-                          <li key={idx}>
-                            {config.stages.find((s) => s.id === id)?.name ?? id}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                ))}
-              </div>
+              {config.racing ? (
+                <div className="text-sm">
+                  {playedTracks.length === 0 ? (
+                    <p className="text-cream/50">Ingen baner kørt endnu</p>
+                  ) : (
+                    <ol className="list-decimal space-y-1 pl-4 text-cream/70">
+                      {playedTracks.map((id, idx) => (
+                        <li key={idx}>
+                          {config.stages.find((s) => s.id === id)?.name ?? id}
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4 text-sm">
+                  {players.map((player, i) => (
+                    <div key={i}>
+                      <p className="font-semibold text-cream">{player.name}</p>
+                      {player.stageWins.length === 0 ? (
+                        <p className="text-cream/50">Ingen stage-sejre endnu</p>
+                      ) : (
+                        <ul className="mt-1 list-disc pl-4 text-cream/70">
+                          {player.stageWins.map((id, idx) => (
+                            <li key={idx}>
+                              {config.stages.find((s) => s.id === id)?.name ?? id}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="rounded-xl border-2 border-white/10 bg-ink/80 p-5">
