@@ -8,6 +8,12 @@ import {
   requireSession,
   ResponseError,
 } from "../../../lib/api";
+import {
+  DISCORD_COLORS,
+  gameLabel,
+  notifyDiscord,
+  tournamentUrl,
+} from "../../../lib/discord";
 
 export async function onRequestPost(
   context: EventContext<Env, "code", { ctx: ApiContext }>,
@@ -19,10 +25,10 @@ export async function onRequestPost(
     const code = ctx.params.code;
 
     const tournament = await ctx.env.DB.prepare(
-      "SELECT id, status FROM tournaments WHERE join_code = ?",
+      "SELECT id, name, game, status FROM tournaments WHERE join_code = ?",
     )
       .bind(code)
-      .first<{ id: string; status: string }>();
+      .first<{ id: string; name: string; game: string; status: string }>();
 
     if (!tournament) {
       return error("Turneringen findes ikke.", 404, corsHeaders(origin));
@@ -46,6 +52,26 @@ export async function onRequestPost(
     )
       .bind(tournament.id, session.player_id)
       .run();
+
+    const count = await ctx.env.DB.prepare(
+      "SELECT COUNT(*) AS total FROM entries WHERE tournament_id = ?",
+    )
+      .bind(tournament.id)
+      .first<{ total: number }>();
+
+    // Fortæl Discord om den nye tilmelding
+    context.waitUntil(
+      notifyDiscord(ctx.env, {
+        title: `🎮 ${session.player.gamertag} er på bracket!`,
+        description: `${gameLabel(tournament.game)} — ${tournament.name}`,
+        color: DISCORD_COLORS.brick,
+        url: tournamentUrl(ctx.request, code),
+        fields: [
+          { name: "Tilmeldte", value: `${count?.total ?? 0}`, inline: true },
+        ],
+        footer: { text: "Scan QR-koden på siden for at join" },
+      }),
+    );
 
     return json(
       { success: true, tournament_id: tournament.id },
