@@ -11,6 +11,7 @@ import { toDataURL } from "qrcode";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 
+import { DiscordIcon } from "@/components/Navbar";
 import { PageHeader } from "@/components/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,6 +47,13 @@ export function TournamentLanding() {
   const [error, setError] = useState<string | null>(null);
   const [guestTag, setGuestTag] = useState("");
   const [busy, setBusy] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+
+  // Tick hvert 30. sekund, så check-in vinduet/countdown opdaterer sig selv
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, []);
 
   const joinUrl = useMemo(() => {
     if (typeof window === "undefined" || !code) return "";
@@ -128,6 +136,20 @@ export function TournamentLanding() {
 
   const isOpen = tournament.status === "signup" || tournament.status === "checkin";
 
+  // Check-in åbner 15 min før runde 1 og lukker 60 min efter start
+  const CHECKIN_OPENS_MS = 15 * 60 * 1000;
+  const CHECKIN_CLOSES_MS = 60 * 60 * 1000;
+  const startAt = tournament.start_at ?? null;
+  const checkinOpensAt = startAt ? startAt - CHECKIN_OPENS_MS : null;
+  const checkinWindowOpen =
+    isOpen &&
+    (startAt === null
+      ? tournament.status === "checkin"
+      : now >= startAt - CHECKIN_OPENS_MS && now <= startAt + CHECKIN_CLOSES_MS);
+
+  const fmtTid = (ts: number) =>
+    new Date(ts).toLocaleTimeString("da-DK", { hour: "2-digit", minute: "2-digit" });
+
   return (
     <>
       <PageHeader
@@ -180,34 +202,44 @@ export function TournamentLanding() {
 
               {!me?.joined && isOpen && (
                 <div className="space-y-3">
-                  <p className="text-sm text-ink/70">
-                    Har du ikke Discord? Indtast dit gamertag:
-                  </p>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={guestTag}
-                      onChange={(e) => setGuestTag(e.target.value)}
-                      placeholder="Dit gamertag"
-                      className="flex-1 rounded-lg border-2 border-ink bg-cream px-4 py-2 font-bold shadow-poster-sm outline-none focus:ring-2 focus:ring-brick"
-                    />
-                    <Button
-                      onClick={() => void handleGuestJoin()}
-                      disabled={busy || guestTag.trim().length < 2}
-                      className="bg-ink text-cream hover:bg-brick hover:text-ink"
-                    >
-                      Tilmeld
-                    </Button>
-                  </div>
                   <Button
                     asChild
-                    variant="outline"
-                    className="w-full border-2 border-ink"
+                    className="w-full bg-[#5865F2] text-white hover:bg-[#4752C4]"
                   >
-                    <a href={`/api/auth/discord?state=/t/${code}`}>
-                      Fortsæt med Discord
+                    <a
+                      href={`/api/auth/discord?returnTo=${encodeURIComponent(`/t/${code}`)}`}
+                    >
+                      <span className="mr-2 inline-flex">
+                        <DiscordIcon size={16} />
+                      </span>
+                      Tilmeld med Discord
                     </a>
                   </Button>
+                  <p className="text-center text-xs text-ink/50">
+                    Scan QR → log ind med Discord → du er på bracket. Husk
+                    check-in 15 min før runde 1!
+                  </p>
+                  <div className="border-t-2 border-dashed border-ink/20 pt-3">
+                    <p className="text-sm text-ink/70">
+                      Har du ikke Discord? Indtast dit gamertag:
+                    </p>
+                    <div className="mt-2 flex gap-2">
+                      <input
+                        type="text"
+                        value={guestTag}
+                        onChange={(e) => setGuestTag(e.target.value)}
+                        placeholder="Dit gamertag"
+                        className="flex-1 rounded-lg border-2 border-ink bg-cream px-4 py-2 font-bold shadow-poster-sm outline-none focus:ring-2 focus:ring-brick"
+                      />
+                      <Button
+                        onClick={() => void handleGuestJoin()}
+                        disabled={busy || guestTag.trim().length < 2}
+                        className="bg-ink text-cream hover:bg-brick hover:text-ink"
+                      >
+                        Tilmeld
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -215,18 +247,24 @@ export function TournamentLanding() {
                 <div className="rounded-xl border-2 border-ink bg-cream p-4 text-center shadow-poster-sm">
                   <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-olive" />
                   <p className="font-bold">Du er tilmeldt!</p>
-                  {tournament.status === "checkin" && !me.checked_in && (
+                  {me.checked_in ? (
+                    <p className="mt-2 text-sm font-bold text-olive">
+                      ✅ Du er checket ind — klar til runde 1!
+                    </p>
+                  ) : checkinWindowOpen ? (
                     <Button
                       onClick={() => void handleCheckin()}
                       disabled={busy}
                       className="mt-3 bg-brick text-cream hover:bg-brick-soft"
                     >
-                      <Calendar className="mr-2 h-4 w-4" /> Check in
+                      <Calendar className="mr-2 h-4 w-4" /> Check in nu
                     </Button>
-                  )}
-                  {me.checked_in && (
-                    <p className="mt-2 text-sm text-ink/60">Du er checket ind.</p>
-                  )}
+                  ) : checkinOpensAt && now < checkinOpensAt ? (
+                    <p className="mt-2 text-sm text-ink/60">
+                      Check-in åbner kl. {fmtTid(checkinOpensAt)} — 15 min før
+                      runde 1{startAt ? ` (start kl. ${fmtTid(startAt)})` : ""}.
+                    </p>
+                  ) : null}
                 </div>
               )}
             </motion.div>
