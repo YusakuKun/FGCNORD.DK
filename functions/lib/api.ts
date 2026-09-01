@@ -10,6 +10,7 @@ export interface Env {
   DISCORD_REDIRECT_URI?: string;
   DISCORD_BOT_TOKEN?: string;
   DISCORD_GUILD_ID?: string;
+  DISCORD_MEMBER_ROLE_ID?: string;
 }
 
 export interface ApiContext {

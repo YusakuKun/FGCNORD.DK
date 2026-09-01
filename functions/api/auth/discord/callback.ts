@@ -46,13 +46,20 @@ async function checkGuildMembership(
 ): Promise<boolean | null> {
   const botToken = ctx.env.DISCORD_BOT_TOKEN;
   const guildId = ctx.env.DISCORD_GUILD_ID;
+  const roleId = ctx.env.DISCORD_MEMBER_ROLE_ID;
   if (!botToken || !guildId) return null; // ikke konfigureret — lad være med at ændre status
   try {
     const res = await fetch(
       `https://discord.com/api/guilds/${guildId}/members/${discordUserId}`,
       { headers: { Authorization: `Bot ${botToken}` } },
     );
-    if (res.ok) return true;
+    if (res.ok) {
+      // Medlemskab = medlemsrollen på serveren. Er rollen ikke konfigureret,
+      // tæller rent server-medlemskab.
+      if (!roleId) return true;
+      const member = (await res.json()) as { roles?: string[] };
+      return Array.isArray(member.roles) && member.roles.includes(roleId);
+    }
     if (res.status === 404) return false;
     return null; // andre fejl: rør ikke eksisterende status
   } catch {

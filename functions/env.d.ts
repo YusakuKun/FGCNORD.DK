@@ -19,4 +19,6 @@ interface Env {
   DISCORD_BOT_TOKEN?: string;
   /** Vores Discord-servers guild-ID (valgfri, men krævet for medlems-tracking) */
   DISCORD_GUILD_ID?: string;
+  /** Rolle-ID for medlemsrollen på serveren (valgfri — ellers tæller server-medlemskab) */
+  DISCORD_MEMBER_ROLE_ID?: string;
 }
