@@ -174,7 +174,7 @@ export function Admin() {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mx-auto max-w-md rounded-2xl border-[3px] border-ink bg-cream-dim p-8 shadow-poster"
+              className="mx-auto max-w-md rounded-2xl border-[3px] border-ink bg-cream-dim p-8 text-ink shadow-poster"
             >
               <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl border-2 border-ink bg-coal shadow-poster-sm">
                 <KeyRound className="h-6 w-6 text-brick-soft" aria-hidden="true" />
@@ -226,7 +226,7 @@ export function Admin() {
           variant="outline"
           size="sm"
           onClick={forgetKey}
-          className="mt-4 border-2 border-cream/40 bg-transparent text-cream hover:bg-cream/10"
+          className="mt-4 border-2 border-ink bg-transparent text-ink hover:bg-ink hover:text-cream"
         >
           <Trash2 className="mr-1 h-4 w-4" aria-hidden="true" /> Glem nøgle
         </Button>
@@ -251,7 +251,7 @@ export function Admin() {
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-2xl border-[3px] border-ink bg-cream-dim p-6 shadow-poster lg:col-span-2"
+              className="rounded-2xl border-[3px] border-ink bg-cream-dim p-6 text-ink shadow-poster lg:col-span-2"
             >
               <h2 className="flex items-center gap-2 font-heading text-xl font-bold">
                 <Plus className="h-5 w-5 text-brick" aria-hidden="true" />
