@@ -16,6 +16,24 @@ import {
   gameLabel,
   notifyDiscord,
 } from "../../lib/discord";
+import { applyRatingResult } from "../../lib/rating";
+
+/** Opdater Elo-rating for en bekræftet turneringskamp (skakklub-modellen) */
+async function applyTournamentRating(
+  db: D1Database,
+  match: MatchRow,
+  winnerId: string,
+): Promise<void> {
+  const loserId =
+    winnerId === match.player1_id ? match.player2_id : match.player1_id;
+  if (!loserId) return;
+  const t = await db
+    .prepare("SELECT game FROM tournaments WHERE id = ?")
+    .bind(match.tournament_id)
+    .first<{ game: string }>();
+  if (!t) return;
+  await applyRatingResult(db, t.game, winnerId, loserId);
+}
 
 /** Post kampresultat til Discord når en kamp er bekræftet */
 async function notifyMatchResult(
@@ -140,7 +158,10 @@ export async function onRequestPost(
           match.reported_by ?? session.player_id,
         );
         context.waitUntil(
-          notifyMatchResult(context, match, score1, score2, winnerId),
+          (async () => {
+            await applyTournamentRating(ctx.env.DB, match, winnerId);
+            await notifyMatchResult(context, match, score1, score2, winnerId);
+          })(),
         );
         return json({ success: true, status: "confirmed" }, { headers: corsHeaders(origin) });
       }
@@ -225,7 +246,10 @@ export async function onRequestPut(
     );
 
     context.waitUntil(
-      notifyMatchResult(context, match, match.score1, match.score2, match.winner_id),
+      (async () => {
+        await applyTournamentRating(ctx.env.DB, match, match.winner_id as string);
+        await notifyMatchResult(context, match, match.score1, match.score2, match.winner_id);
+      })(),
     );
 
     return json({ success: true, status: "confirmed" }, { headers: corsHeaders(origin) });

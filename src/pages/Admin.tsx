@@ -3,6 +3,7 @@ import {
   Calendar,
   CheckCircle2,
   Copy,
+  Gamepad2,
   KeyRound,
   Play,
   Plus,
@@ -23,9 +24,12 @@ import { Button } from "@/components/ui/button";
 import {
   adminCreateTournament,
   adminListTournaments,
+  adminOpenLobby,
+  adminCloseLobby,
   adminStartTournament,
   type AdminTournament,
 } from "@/lib/tournamentApi";
+import { getCurrentLobby, type LobbyState } from "@/lib/lobbyApi";
 
 const KEY_STORAGE = "fgc_admin_key";
 
@@ -75,12 +79,20 @@ export function Admin() {
   const [startAt, setStartAt] = useState("");
   const [startggSlug, setStartggSlug] = useState("");
 
+  // Lobby
+  const [lobby, setLobby] = useState<LobbyState | null>(null);
+  const [lobbyTitle, setLobbyTitle] = useState("");
+  const [lobbyGame, setLobbyGame] = useState("ultimate");
+  const [lobbyStations, setLobbyStations] = useState("2");
+
   const load = useCallback(async () => {
     if (!key) return;
     setError(null);
     try {
       const data = await adminListTournaments(key);
       setTournaments(data.tournaments);
+      const lobbyRes = await getCurrentLobby();
+      setLobby(lobbyRes.lobby);
     } catch (err) {
       setTournaments(null);
       setError(err instanceof Error ? err.message : "Kunne ikke hente turneringer");
@@ -158,6 +170,47 @@ export function Admin() {
   const copyLink = (code: string) => {
     void navigator.clipboard.writeText(`${window.location.origin}/t/${code}`);
     setNotice(`Join-link kopieret: /t/${code}`);
+  };
+
+  const handleOpenLobby = async () => {
+    if (lobbyTitle.trim().length < 2) {
+      setError("Giv lobbyen en titel.");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await adminOpenLobby(key, {
+        title: lobbyTitle.trim(),
+        game: lobbyGame,
+        stations: Number(lobbyStations) || 2,
+      });
+      setNotice(`Lobby "${lobbyTitle.trim()}" er åben — postet på Discord.`);
+      setLobbyTitle("");
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Kunne ikke åbne lobby");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleCloseLobby = async () => {
+    if (!lobby) return;
+    if (!confirm(`Luk lobbyen "${lobby.title}"? Uafsluttede kampe aflyses, og ranglisten postes på Discord.`)) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await adminCloseLobby(key, lobby.id);
+      setNotice("Lobby lukket — aftenens rangliste er postet på Discord.");
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Kunne ikke lukke lobby");
+    } finally {
+      setBusy(false);
+    }
   };
 
   /* ---------- Lås-skærm ---------- */
@@ -245,6 +298,79 @@ export function Admin() {
               {notice}
             </div>
           )}
+
+          {/* Lobby-styring */}
+          <div className="mb-8 rounded-2xl border-[3px] border-ink bg-cream-dim p-6 text-ink shadow-poster">
+            <h2 className="flex items-center gap-2 font-heading text-xl font-bold">
+              <Gamepad2 className="h-5 w-5 text-brick" aria-hidden="true" />
+              Aftenens lobby
+            </h2>
+            {lobby ? (
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm font-bold">
+                  <span className="mr-2 rounded-md bg-emerald-500 px-2 py-0.5 text-xs uppercase text-coal">Åben</span>
+                  {lobby.title} · {gameLabels[lobby.game] || lobby.game} · {lobby.attendees.length} fremmødte ·{" "}
+                  {lobby.matches.filter((m) => m.status === "done").length} kampe spillet
+                </p>
+                <div className="flex gap-2">
+                  <Button asChild variant="outline" size="sm" className="border-2 border-ink">
+                    <Link to="/lobby">Åbn lobby-side</Link>
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={busy}
+                    onClick={() => void handleCloseLobby()}
+                    className="bg-brick text-coal hover:bg-brick-soft"
+                  >
+                    Luk lobby + post rangliste
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 flex flex-wrap items-end gap-3">
+                <div className="min-w-48 flex-1">
+                  <label className="block text-sm font-bold">Titel</label>
+                  <input
+                    type="text"
+                    value={lobbyTitle}
+                    onChange={(e) => setLobbyTitle(e.target.value)}
+                    placeholder="Weekly #77 — casuals"
+                    className="mt-1 w-full rounded-lg border-2 border-ink bg-cream px-4 py-2.5 shadow-poster-sm outline-none focus:ring-2 focus:ring-brick"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold">Spil</label>
+                  <select
+                    value={lobbyGame}
+                    onChange={(e) => setLobbyGame(e.target.value)}
+                    className="mt-1 rounded-lg border-2 border-ink bg-cream px-4 py-2.5 font-bold shadow-poster-sm outline-none focus:ring-2 focus:ring-brick"
+                  >
+                    <option value="ultimate">Ultimate</option>
+                    <option value="melee">Melee</option>
+                    <option value="roa2">Rivals of Aether 2</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold">Stations</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={lobbyStations}
+                    onChange={(e) => setLobbyStations(e.target.value)}
+                    className="mt-1 w-20 rounded-lg border-2 border-ink bg-cream px-4 py-2.5 shadow-poster-sm outline-none focus:ring-2 focus:ring-brick"
+                  />
+                </div>
+                <Button
+                  disabled={busy}
+                  onClick={() => void handleOpenLobby()}
+                  className="bg-brick text-coal hover:bg-brick-soft"
+                >
+                  Åbn lobby + post på Discord
+                </Button>
+              </div>
+            )}
+          </div>
 
           <div className="grid items-start gap-8 lg:grid-cols-5">
             {/* Opret turnering */}

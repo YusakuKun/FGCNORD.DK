@@ -7,6 +7,8 @@ import { Sparkle } from "./Sparkle";
 const LINKS = [
   { to: "/", label: "Forside" },
   { to: "/turneringer", label: "Turneringer" },
+  { to: "/lobby", label: "Lobby" },
+  { to: "/rangliste", label: "Rangliste" },
   { to: "/stage-strike", label: "Stage Strike" },
   { to: "/pr", label: "Rankings" },
   { to: "/om", label: "Om fællesskabet" },
