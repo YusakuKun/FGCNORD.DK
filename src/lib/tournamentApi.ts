@@ -105,6 +105,82 @@ export interface TournamentPublic {
   my_entry?: { checked_in: number; seed: number | null } | null;
 }
 
+/* ---------- Admin (kræver ADMIN_API_KEY som Bearer) ---------- */
+
+async function fetchAdmin(
+  path: string,
+  adminKey: string,
+  init?: RequestInit,
+): Promise<unknown> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    credentials: "same-origin",
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${adminKey}`,
+      ...init?.headers,
+    },
+  });
+  const data = (await res.json().catch(() => ({
+    error: "Uventet svar fra serveren.",
+  }))) as { error?: string };
+  if (!res.ok) {
+    throw new Error(data.error || `HTTP ${res.status}`);
+  }
+  return data;
+}
+
+export interface AdminTournament {
+  id: string;
+  name: string;
+  game: string;
+  format: string;
+  status: string;
+  join_code: string;
+  startgg_slug: string | null;
+  start_at: number | null;
+  created_at: number;
+  entrants: number;
+  checked_in: number;
+}
+
+export async function adminListTournaments(adminKey: string) {
+  return fetchAdmin("/tournaments", adminKey) as Promise<{
+    tournaments: AdminTournament[];
+  }>;
+}
+
+export async function adminCreateTournament(
+  adminKey: string,
+  body: {
+    name: string;
+    game: string;
+    format?: string;
+    startgg_slug?: string;
+    start_at?: number;
+  },
+) {
+  return fetchAdmin("/tournaments", adminKey, {
+    method: "POST",
+    body: JSON.stringify(body),
+  }) as Promise<{
+    success: boolean;
+    tournament: {
+      id: string;
+      name: string;
+      join_code: string;
+    };
+  }>;
+}
+
+export async function adminStartTournament(adminKey: string, code: string) {
+  return fetchAdmin(
+    `/tournaments/${encodeURIComponent(code)}/start`,
+    adminKey,
+    { method: "POST" },
+  ) as Promise<{ success: boolean; matches: number }>;
+}
+
 export interface Match {
   id: string;
   tournament_id: string;
