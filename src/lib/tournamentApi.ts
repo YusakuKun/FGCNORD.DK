@@ -99,6 +99,7 @@ export interface TournamentPublic {
   status: string;
   join_code: string;
   startgg_slug: string | null;
+  start_at: number | null;
   created_at: number;
   entrants: { id: string; gamertag: string; checked_in: number; seed: number | null }[];
   my_entry?: { checked_in: number; seed: number | null } | null;

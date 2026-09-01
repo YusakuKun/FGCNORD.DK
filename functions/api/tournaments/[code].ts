@@ -15,6 +15,7 @@ export interface TournamentPublic {
   status: string;
   join_code: string;
   startgg_slug: string | null;
+  start_at: number | null;
   created_at: number;
   entrants: { id: string; gamertag: string; checked_in: number; seed: number | null }[];
   my_entry?: { checked_in: number; seed: number | null } | null;
@@ -28,7 +29,7 @@ export async function onRequestGet(
   try {
     const code = ctx.params.code;
     const tournament = await ctx.env.DB.prepare(
-      "SELECT id, name, game, format, status, join_code, startgg_slug, created_at FROM tournaments WHERE join_code = ?",
+      "SELECT id, name, game, format, status, join_code, startgg_slug, start_at, created_at FROM tournaments WHERE join_code = ?",
     )
       .bind(code)
       .first<TournamentPublic>();

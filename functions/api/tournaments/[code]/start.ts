@@ -9,6 +9,12 @@ import {
   ResponseError,
 } from "../../../lib/api";
 import { generateDoubleElimination } from "../../../lib/bracket";
+import {
+  bracketUrl,
+  DISCORD_COLORS,
+  gameLabel,
+  notifyDiscord,
+} from "../../../lib/discord";
 import { markReadyMatches, resolveByes } from "../../../lib/match";
 
 export async function onRequestPost(
@@ -21,10 +27,10 @@ export async function onRequestPost(
     const code = ctx.params.code;
 
     const tournament = await ctx.env.DB.prepare(
-      "SELECT id, status, format FROM tournaments WHERE join_code = ?",
+      "SELECT id, name, game, status, format FROM tournaments WHERE join_code = ?",
     )
       .bind(code)
-      .first<{ id: string; status: string; format: string }>();
+      .first<{ id: string; name: string; game: string; status: string; format: string }>();
 
     if (!tournament) {
       return error("Turneringen findes ikke.", 404, corsHeaders(origin));
@@ -85,6 +91,24 @@ export async function onRequestPost(
 
     await resolveByes(ctx.env.DB, tournament.id);
     await markReadyMatches(ctx.env.DB, tournament.id);
+
+    // Bracket er live — drop den på Discord med deltagerlisten
+    const tags = entrantList.map((e) => e.gamertag).join(", ");
+    context.waitUntil(
+      notifyDiscord(ctx.env, {
+        title: `🔥 Bracket er LIVE: ${tournament.name}`,
+        description: `${gameLabel(tournament.game)} · ${entrantList.length} spillere · double elimination`,
+        color: DISCORD_COLORS.coal,
+        url: bracketUrl(ctx.request, code),
+        fields: [
+          {
+            name: "Deltagere",
+            value: tags.length > 1000 ? `${tags.slice(0, 1000)}…` : tags,
+          },
+        ],
+        footer: { text: "Følg bracket live på fgcnord.dk" },
+      }),
+    );
 
     return json(
       { success: true, matches: generated.length },
