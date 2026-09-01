@@ -1,6 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 
 import { Layout } from "@/components/Layout";
+import { Admin } from "@/pages/Admin";
 import { BlivMedlem } from "@/pages/BlivMedlem";
 import { Home } from "@/pages/Home";
 import { Om } from "@/pages/Om";
@@ -29,6 +30,7 @@ function App() {
         <Route path="pr/:slug" element={<PowerRankingDetail />} />
         <Route path="om" element={<Om />} />
         <Route path="bliv-medlem" element={<BlivMedlem />} />
+        <Route path="admin" element={<Admin />} />
         <Route path="*" element={<Placeholder />} />
       </Route>
     </Routes>
