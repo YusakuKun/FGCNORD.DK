@@ -19,8 +19,9 @@ interface Env {
   DISCORD_BOT_TOKEN?: string;
   /** Vores Discord-servers guild-ID (valgfri, men krævet for medlems-tracking) */
   DISCORD_GUILD_ID?: string;
-  /** Rolle-ID for medlemsrollen på serveren (valgfri — ellers tæller server-medlemskab) */
   DISCORD_MEMBER_ROLE_ID?: string;
   /** Rolle der pinges ved nye turneringer/bracket-start (valgfri — ellers bruges medlemsrollen) */
   DISCORD_PING_ROLE_ID?: string;
+  /** start.gg API-token (Developer Settings på start.gg) — bruges til events + tilmeldte */
+  STARTGG_API_TOKEN?: string;
 }
