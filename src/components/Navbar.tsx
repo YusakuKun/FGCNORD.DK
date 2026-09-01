@@ -8,6 +8,7 @@ const LINKS = [
   { to: "/", label: "Forside" },
   { to: "/turneringer", label: "Turneringer" },
   { to: "/stage-strike", label: "Stage Strike" },
+  { to: "/pr", label: "Rankings" },
   { to: "/om", label: "Om foreningen" },
 ];
 
