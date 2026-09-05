@@ -290,7 +290,7 @@ export function BlivMedlem() {
                 <div className="mb-4 mt-2 flex h-12 w-12 items-center justify-center rounded-lg border-2 border-ink bg-cream-dim shadow-poster-sm">
                   <step.icon className="h-5 w-5 text-brick" aria-hidden="true" />
                 </div>
-                <h3 className="font-heading text-xl font-bold">{step.title}</h3>
+                <h3 className="font-heading text-xl font-bold text-ink">{step.title}</h3>
                 <p className="mt-2 text-ink/70">{step.text}</p>
               </motion.div>
             ))}

@@ -100,7 +100,7 @@ export function Lobby() {
         }`}
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="font-heading font-bold">
+          <p className="font-heading font-bold text-ink">
             {m.status === "called" && (
               <span className="mr-2 rounded-md bg-brick px-2 py-0.5 text-xs uppercase text-coal">
                 Setup {m.station}
