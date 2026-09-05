@@ -63,9 +63,19 @@ const GALLERY = [
     caption: "Efterfest med crewet",
   },
   {
-    src: "/gallery-himmerlan-mkwii.jpg",
-    alt: "Top 8-kollage for Mario Kart Wii ved HimmerLAN IGEN",
-    caption: "HimmerLAN IGEN · Mario Kart Wii · Top 8",
+    src: "/gallery/himmerlan-05.jpg",
+    alt: "Crewet samlet på trappen i venue under HimmerLAN",
+    caption: "Crewet · HimmerLAN",
+  },
+  {
+    src: "/gallery/himmerlan-11.jpg",
+    alt: "To medlemmer griner sammen på gaden om natten til afterparty",
+    caption: "Afterparty i byen",
+  },
+  {
+    src: "/gallery/himmerlan-08.jpg",
+    alt: "Spillere foran setups med skærme og controllere",
+    caption: "Casuals ved setuppene",
   },
 ];
 
@@ -300,8 +310,8 @@ export function Home() {
             transition={{ duration: 0.7, ease: EASE }}
           >
             <img
-              src="/community-photo-1.png"
-              alt="Spillere samlet omkring skærme i et nordjysk forsamlingshus"
+              src="/gallery/himmerlan-01.jpg"
+              alt="Venue under HimmerLAN med setups, borde og stort projektorlærred"
               className="w-full rounded-2xl border-[3px] border-ink shadow-poster-lg"
             />
           </motion.div>
@@ -405,6 +415,21 @@ export function Home() {
               </motion.figure>
             ))}
           </div>
+          <motion.div
+            initial={from({ opacity: 0, y: 24 })}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={{ duration: 0.7, ease: EASE, delay: reduced ? 0 : 0.15 }}
+            className="mt-10"
+          >
+            <Link
+              to="/galleri"
+              className="group inline-flex items-center gap-2 rounded-full border-[3px] border-ink bg-cream px-6 py-3 font-heading text-sm font-bold uppercase tracking-widest text-ink shadow-poster transition-all hover:-translate-y-0.5 hover:bg-brick hover:text-coal"
+            >
+              Se hele galleriet
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </motion.div>
         </div>
       </section>
       <WaveDivider fill="#0A1E3C" className="bg-cream" />
