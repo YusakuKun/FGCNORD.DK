@@ -34,6 +34,15 @@ const GAMES = [
     bg: "from-emerald-900/30 via-teal-900/20 to-coal",
     accent: "#4FD1C5",
   },
+  {
+    id: "mkwii",
+    navn: "MARIO KART WII",
+    banner: "/stage-strike-banner-mkwii.jpg",
+    tekst: "Game night-favoritten. Vi kører løb med rigtigt banevalg — tilfældig første bane, taberen vælger, ingen gentagelser i serien.",
+    chip: "Wii · Grand Prix",
+    bg: "from-amber-900/40 via-rose-900/20 to-coal",
+    accent: "#FF9E3D",
+  },
 ];
 
 /** Pin-sektion på coal: ét spil i fokus ad gangen, med logo, gradient-bg og progress-bar. */
@@ -53,7 +62,7 @@ function GamesPinSection() {
         scrollTrigger: {
           trigger: container.current,
           start: "top top",
-          end: "+=150%",
+          end: "+=200%",
           pin: true,
           scrub: 0.6,
           onUpdate: (self) => {
@@ -109,12 +118,20 @@ function GamesPinSection() {
             {GAMES.map((g) => (
               <div key={g.id} className="game-panel absolute inset-0 flex flex-col justify-center">
                 <div className="flex flex-col items-start gap-8 lg:flex-row lg:items-center">
-                  <div className="flex w-full max-w-[320px] items-center justify-center rounded-2xl border-[3px] border-ink bg-cream p-6 shadow-poster-lg lg:p-8">
-                    <img
-                      src={g.logo}
-                      alt={g.navn}
-                      className="h-auto w-full max-w-[260px] object-contain"
-                    />
+                  <div className="flex w-full max-w-[320px] items-center justify-center overflow-hidden rounded-2xl border-[3px] border-ink bg-cream shadow-poster-lg">
+                    {"banner" in g && g.banner ? (
+                      <img
+                        src={g.banner}
+                        alt={g.navn}
+                        className="aspect-[16/10] w-full object-cover"
+                      />
+                    ) : (
+                      <img
+                        src={g.logo}
+                        alt={g.navn}
+                        className="h-auto w-full max-w-[260px] object-contain p-6 lg:p-8"
+                      />
+                    )}
                   </div>
                   <div className="flex-1">
                     <h3 className="font-display text-[30px] uppercase leading-[1.05] text-cream md:text-[48px]">
