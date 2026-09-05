@@ -16,11 +16,25 @@ const VALUES = [
   { title: "Lokal forankring", text: "Nordjylland er vores hjemmebane." },
 ];
 
-const TEASER_THUMBS = [
-  "/stage-thumbs/battlefield.png",
-  "/stage-thumbs/final-destination.png",
-  "/stage-thumbs/smashville.png",
-  "/stage-thumbs/town-and-city.png",
+const TEASER_BANNERS = [
+  {
+    src: "/stage-strike-banner.jpg",
+    label: "Melee",
+    time: "Nat",
+    alt: "Flydende platform-stage under nordlys om natten",
+  },
+  {
+    src: "/stage-strike-banner-ultimate.jpg",
+    label: "Ultimate",
+    time: "Dag",
+    alt: "Samme flydende stage i klart dagslys",
+  },
+  {
+    src: "/stage-strike-banner-mkwii.jpg",
+    label: "Mario Kart Wii",
+    time: "Solnedgang",
+    alt: "Samme flydende stage i varm solnedgang",
+  },
 ];
 
 const GALLERY = [
@@ -151,7 +165,7 @@ export function Home() {
               className="mt-8 flex flex-wrap gap-2.5"
               aria-label="Spil vi spiller"
             >
-              {["Melee", "Ultimate", "RoA2"].map((chip) => (
+              {["Melee", "Ultimate", "RoA2", "Mario Kart Wii"].map((chip) => (
                 <li
                   key={chip}
                   className="rounded-full border-2 border-cream/50 px-4 py-1.5 text-[12px] font-bold uppercase tracking-[0.14em] text-cream/90"
@@ -277,7 +291,7 @@ export function Home() {
                 >
                   <motion.span
                     initial={from({ rotate: -90, scale: 0 })}
-                    whileInView={{ rotate: 1, scale: 1 }}
+                    whileInView={{ rotate: 0, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ type: "spring", stiffness: 300, damping: 15, delay: reduced ? 0 : i * 0.15 }}
                     className="mt-1"
@@ -361,35 +375,33 @@ export function Home() {
         <div className="mx-auto max-w-[820px] px-6">
           <SectionHeader eyebrow="Værktøj" title="Strike som en pro" centered light />
           <p className="mx-auto mt-6 max-w-xl text-[16px] leading-[1.7] text-cream/85 md:text-[17px]">
-            Brug vores interaktive stage strike-værktøj til Ultimate og Melee — med reglerne bygget
-            ind. Perfekt til weeklies og træning.
+            Brug vores interaktive stage strike-værktøj til Ultimate og Melee — og banevalg til
+            Mario Kart Wii — med reglerne bygget ind. Samme stage, tre tider på døgnet. Perfekt til
+            weeklies og træning.
           </p>
-          <div className="mt-10 flex justify-center gap-4 overflow-x-auto px-2 pb-2">
-            {TEASER_THUMBS.map((src, i) => (
-              <motion.div
-                key={src}
-                initial={from({ opacity: 0, y: 30, rotate: i % 2 === 0 ? -3 : 3 })}
+          <div className="mt-10 flex justify-center gap-4 overflow-x-auto px-2 pb-2 md:gap-6">
+            {TEASER_BANNERS.map((b, i) => (
+              <motion.figure
+                key={b.src}
+                initial={from({ opacity: 0, y: 30, rotate: i % 2 === 0 ? -2 : 2 })}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.4 }}
-                transition={{ duration: 0.6, ease: EASE, delay: reduced ? 0 : i * 0.1 }}
-                className="group relative w-[160px] shrink-0 md:w-[190px]"
+                transition={{ duration: 0.6, ease: EASE, delay: reduced ? 0 : i * 0.12 }}
+                className="group w-[220px] shrink-0 md:w-[260px]"
               >
-                <img
-                  src={src}
-                  alt="Stage thumbnail fra stage strike-værktøjet"
-                  className="w-full rounded-xl border-[3px] border-cream shadow-poster-cream"
-                />
-                {i === 1 && (
-                  <svg
-                    viewBox="0 0 100 60"
-                    className="pointer-events-none absolute inset-0 h-full w-full opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                    aria-hidden="true"
-                  >
-                    <line x1="8" y1="6" x2="92" y2="54" stroke="#4FC3F7" strokeWidth="7" strokeLinecap="round" />
-                    <line x1="92" y1="6" x2="8" y2="54" stroke="#4FC3F7" strokeWidth="7" strokeLinecap="round" />
-                  </svg>
-                )}
-              </motion.div>
+                <div className="overflow-hidden rounded-xl border-[3px] border-cream shadow-poster-cream">
+                  <img
+                    src={b.src}
+                    alt={b.alt}
+                    loading="lazy"
+                    className="aspect-[16/10] w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
+                  />
+                </div>
+                <figcaption className="mt-2.5 flex items-baseline justify-between px-1 text-[12px] font-bold uppercase tracking-[0.12em]">
+                  <span className="text-cream">{b.label}</span>
+                  <span className="text-brick-soft">{b.time}</span>
+                </figcaption>
+              </motion.figure>
             ))}
           </div>
           <motion.div
