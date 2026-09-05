@@ -1,5 +1,9 @@
 import { ApiContext, corsHeaders, error, getOrigin, handleError } from "../../lib/api";
 
+/** Cookie der bærer OAuth state-nonce gennem login-flowet (CSRF-værn) */
+export const OAUTH_STATE_COOKIE = "fgc_oauth_state";
+const STATE_TTL_SECONDS = 600; // 10 minutter til at gennemføre login
+
 function getRedirectUri(ctx: ApiContext): string {
   return (
     ctx.env.DISCORD_REDIRECT_URI ||
@@ -26,9 +30,11 @@ export async function onRequestGet(
         ? returnToParam
         : "/";
 
-    // State bærer både CSRF-nonce og returlink gennem OAuth-flowet
+    // State bærer både CSRF-nonce og returlink gennem OAuth-flowet.
+    // Noncen gemmes også i en httpOnly-cookie og verificeres i callback.
+    const nonce = crypto.randomUUID();
     const state = btoa(
-      JSON.stringify({ n: crypto.randomUUID(), r: returnTo }),
+      JSON.stringify({ n: nonce, r: returnTo }),
     )
       .replaceAll("+", "-")
       .replaceAll("/", "_")
@@ -43,7 +49,13 @@ export async function onRequestGet(
     url.searchParams.set("scope", "identify");
     url.searchParams.set("state", state);
 
-    return Response.redirect(url.toString(), 302);
+    return new Response(null, {
+      status: 302,
+      headers: {
+        Location: url.toString(),
+        "Set-Cookie": `${OAUTH_STATE_COOKIE}=${nonce}; Path=/api/auth; HttpOnly; Secure; SameSite=Lax; Max-Age=${STATE_TTL_SECONDS}`,
+      },
+    });
   } catch (err) {
     return handleError(err, origin);
   }
