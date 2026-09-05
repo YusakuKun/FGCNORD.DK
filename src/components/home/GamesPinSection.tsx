@@ -1,168 +1,181 @@
-import { useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { ArrowRight } from "lucide-react";
-import SectionHeading from "../ui/SectionHeading";
+import { useGSAP } from "@gsap/react";
+import { Sparkle } from "@/components/Sparkle";
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-interface GamePin {
+const GAMES: Array<{
   id: string;
-  name: string;
-  tagline: string;
-  description: string;
-  href: string;
-  banner: string;
-}
-
-const games: GamePin[] = [
+  navn: string;
+  logo?: string;
+  /** Banner-grafik i stedet for logo (fx spil uden eget logo-asset) */
+  banner?: string;
+  tekst: string;
+  chip: string;
+  bg: string;
+  accent: string;
+}> = [
   {
     id: "melee",
-    name: "Super Smash Bros. Melee",
-    tagline: "Spillet der aldrig dør",
-    description:
-      "Melee-scenen i Nordjylland er kompakt men dedikeret. Vi kører ugentlige weeklies med CRT'er, streams de fleste bracket-runder og sender hvert år spillere til nationals og EU-majors.",
-    href: "/raekkefoelge#melee",
-    banner: "/stage-strike-banner.jpg?v=2",
+    navn: "SUPER SMASH BROS. MELEE",
+    logo: "/game-logos/melee-logo.svg",
+    tekst: "Klassikeren fra 2001. Hurtig, teknisk og stadig levende. Vi har CRT'er og GameCubes klar hver uge.",
+    chip: "GameCube · CRT",
+    bg: "from-red-900/40 via-orange-900/30 to-coal",
+    accent: "#FF4500",
   },
   {
     id: "ultimate",
-    name: "Super Smash Bros. Ultimate",
-    tagline: "Danmarks største smash-scene",
-    description:
-      "Ultimate trækker de største deltagerfelter i regionen. Fra helt nye spillere til landets bedste — alle er velkomne ved vores weeklies, og ranglisten opdateres efter hver turnering.",
-    href: "/raekkefoelge#ultimate",
-    banner: "/stage-strike-banner-ultimate.jpg?v=2",
+    navn: "SUPER SMASH BROS. ULTIMATE",
+    logo: "/game-logos/ultimate-logo.svg",
+    tekst: "Danmarks største smash-scene. Vores ugentlige turneringer kører med selvbetjent tilmelding via start.gg — nemt for alle.",
+    chip: "Switch · Weeklys",
+    bg: "from-red-900/40 via-yellow-900/20 to-coal",
+    accent: "#FFD200",
   },
   {
-    id: "roa2",
-    name: "Rivals of Aether 2",
-    tagline: "Den nye platform fighter",
-    description:
-      "RoA2 er det nyeste skud på stammen i FGC Nord. Scenen vokser hurtigt, og vi afholder løbende side-events og turneringer — perfekt hvis du vil være med fra starten.",
-    href: "/raekkefoelge#roa2",
-    banner: "/hero-roa2.png",
+    id: "rivals2",
+    navn: "RIVALS OF AETHER 2",
+    logo: "/game-logos/rivals2-logo.png",
+    tekst: "Den nye platform fighter på blokken. Kom og vær med fra starten — vi bygger scenen op sammen.",
+    chip: "PC · Ny scene",
+    bg: "from-emerald-900/30 via-teal-900/20 to-coal",
+    accent: "#4FD1C5",
   },
   {
     id: "mkwii",
-    name: "Mario Kart Wii",
-    tagline: "Side-events og retro-hygge",
-    description:
-      "Mario Kart Wii er vores evigt populære side-event: Retro-konsoller, items på fuld blus og kaos på Rainbow Road. Perfekt opvarmning eller paus under de store brackets.",
-    href: "/raekkefoelge#mkwii",
+    navn: "MARIO KART WII",
     banner: "/stage-strike-banner-mkwii.jpg?v=2",
+    tekst: "Vores elskede side-event. Når bracket er færdig, ryger hjulene på — alle kan være med, og heldet kan vende på sidste omgang.",
+    chip: "Wii · Side-events",
+    bg: "from-lime-900/30 via-green-900/20 to-coal",
+    accent: "#95D600",
   },
 ];
 
-export default function GamesPinSection() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const trackRef = useRef<HTMLDivElement>(null);
+/**
+ * Pin-sektion på coal: ét spil i fokus ad gangen.
+ * Synlighed styres af React-state (CSS-transitions) — GSAP står KUN for
+ * pin + scroll-progress, så layoutet aldrig overlapper, selv hvis GSAP
+ * ikke initialiserer (fx reduced motion eller script-fejl).
+ */
+function GamesPinSection() {
+  const container = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(0);
+  const [progress, setProgress] = useState(0);
 
-  useEffect(() => {
-    const section = sectionRef.current;
-    const track = trackRef.current;
-    if (!section || !track) return;
+  useGSAP(
+    () => {
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduced || !container.current) return;
 
-    const ctx = gsap.context(() => {
-      const panels = gsap.utils.toArray<HTMLElement>(".game-pin-panel");
-
-      const tween = gsap.to(track, {
-        xPercent: -100 * (panels.length - 1),
-        ease: "none",
-        scrollTrigger: {
-          trigger: section,
-          start: "top top",
-          end: () => `+=${window.innerHeight * (panels.length - 1)}`,
-          pin: true,
-          scrub: 1,
-          snap: {
-            snapTo: 1 / (panels.length - 1),
-            duration: { min: 0.15, max: 0.45 },
-            ease: "power1.inOut",
-          },
-          invalidateOnRefresh: true,
-          anticipatePin: 1,
+      ScrollTrigger.create({
+        trigger: container.current,
+        start: "top top",
+        end: `+=${(GAMES.length - 1) * 100}%`,
+        pin: true,
+        scrub: 0.6,
+        onUpdate: (self) => {
+          setActive(Math.min(GAMES.length - 1, Math.floor(self.progress * GAMES.length)));
+          setProgress(self.progress);
         },
       });
-
-      panels.forEach((panel) => {
-        const img = panel.querySelector(".game-pin-bg");
-        if (!img) return;
-        gsap.fromTo(
-          img,
-          { scale: 1.12 },
-          {
-            scale: 1,
-            ease: "none",
-            scrollTrigger: {
-              trigger: panel,
-              containerAnimation: tween,
-              start: "left right",
-              end: "right left",
-              scrub: true,
-            },
-          },
-        );
-      });
-    }, section);
-
-    return () => ctx.revert();
-  }, []);
+    },
+    { scope: container }
+  );
 
   return (
-    <section ref={sectionRef} className="relative overflow-hidden bg-ink">
-      <div className="pointer-events-none absolute left-0 right-0 top-0 z-20 bg-gradient-to-b from-ink/80 to-transparent px-4 pb-10 pt-8 sm:px-6 lg:px-8">
-        <SectionHeading
-          dark
-          kicker="Spil hos FGC Nord"
-          title="Fire scener — ét nordjysk fællesskab"
+    <section ref={container} className="relative overflow-hidden bg-coal text-cream">
+      {/* Baggrundsgradient der skifter subtilt */}
+      {GAMES.map((g, i) => (
+        <div
+          key={g.id}
+          className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${g.bg} transition-opacity duration-700 ${
+            active === i ? "opacity-100" : "opacity-0"
+          }`}
+          aria-hidden="true"
         />
-      </div>
+      ))}
 
-      <div
-        ref={trackRef}
-        className="flex h-screen w-[400vw] will-change-transform"
-      >
-        {games.map((game, i) => (
-          <article
-            key={game.id}
-            className="game-pin-panel relative flex h-screen w-screen shrink-0 items-end overflow-hidden"
-          >
-            <img
-              src={game.banner}
-              alt=""
-              aria-hidden="true"
-              className="game-pin-bg absolute inset-0 h-full w-full object-cover"
+      <div className="relative mx-auto flex min-h-[100dvh] max-w-[1200px] flex-col justify-center px-6 py-24">
+        <div className="relative pl-8 md:pl-14">
+          {/* Progress-bar i venstre kant */}
+          <div className="absolute left-0 top-1/2 h-48 w-[6px] -translate-y-1/2 rounded-full bg-cream/15">
+            <div
+              className="h-full w-full origin-top rounded-full bg-brick"
+              style={{ transform: `scaleY(${progress})` }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-ink via-ink/45 to-ink/20" />
+          </div>
 
-            <div className="relative z-10 w-full px-4 pb-16 sm:px-6 lg:px-8">
-              <div className="container-site">
-                <p className="font-mono text-sm font-semibold text-brick-soft">
-                  {String(i + 1).padStart(2, "0")} / {String(games.length).padStart(2, "0")}
-                </p>
-                <h3 className="mt-2 font-display text-3xl font-bold text-cream sm:text-5xl">
-                  {game.name}
-                </h3>
-                <p className="mt-2 text-lg font-medium text-brick-soft">
-                  {game.tagline}
-                </p>
-                <p className="mt-4 max-w-2xl text-sm leading-relaxed text-cream/75 sm:text-base">
-                  {game.description}
-                </p>
-                <Link
-                  to={game.href}
-                  className="mt-6 inline-flex items-center gap-2 rounded-xl bg-brick px-5 py-2.5 text-sm font-semibold text-white transition-all hover:bg-brick-soft hover:text-coal"
+          <div className="flex items-baseline justify-between gap-6">
+            <h2 className="font-display text-[34px] uppercase leading-[1.05] tracking-[-0.01em] md:text-[56px]">
+              Vi spiller
+            </h2>
+            <span className="font-heading text-xl font-extrabold tracking-[-0.02em] text-brick-soft md:text-2xl">
+              0{active + 1}/0{GAMES.length}
+            </span>
+          </div>
+
+          <div className="relative mt-14 min-h-[380px] md:min-h-[340px]">
+            {GAMES.map((g, i) => {
+              const isActive = active === i;
+              return (
+                <div
+                  key={g.id}
+                  className="game-panel absolute inset-0 flex flex-col justify-center transition-all duration-500 ease-out"
+                  style={{
+                    opacity: isActive ? 1 : 0,
+                    visibility: isActive ? "visible" : "hidden",
+                    transform: isActive
+                      ? "translateY(0) scale(1)"
+                      : `translateY(${i < active ? -40 : 40}px) scale(0.97)`,
+                    pointerEvents: isActive ? "auto" : "none",
+                  }}
+                  aria-hidden={!isActive}
                 >
-                  Se ranglisten
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              </div>
-            </div>
-          </article>
-        ))}
+                  <div className="flex flex-col items-start gap-8 lg:flex-row lg:items-center">
+                    <div className="flex w-full max-w-[320px] items-center justify-center overflow-hidden rounded-2xl border-[3px] border-ink bg-cream shadow-poster-lg">
+                      {g.banner ? (
+                        <img
+                          src={g.banner}
+                          alt={g.navn}
+                          className="aspect-[16/10] w-full object-cover"
+                        />
+                      ) : (
+                        <img
+                          src={g.logo}
+                          alt={g.navn}
+                          className="h-auto w-full max-w-[260px] object-contain p-6 lg:p-8"
+                        />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-display text-[30px] uppercase leading-[1.05] text-cream md:text-[48px]">
+                        {g.navn}
+                      </h3>
+                      <p className="mt-5 max-w-xl text-[16px] leading-[1.7] text-cream/80 md:text-[17px]">
+                        {g.tekst}
+                      </p>
+                      <span
+                        className="mt-6 inline-block rounded-full border-2 border-cream/50 px-4 py-1.5 text-[12px] font-bold uppercase tracking-[0.14em] text-cream/85"
+                        style={{ borderColor: `${g.accent}80`, color: g.accent }}
+                      >
+                        {g.chip}
+                      </span>
+                      <Sparkle size={30} className="mt-6 block" color={g.accent} />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </section>
   );
 }
+
+export default GamesPinSection;
+export { GamesPinSection };
