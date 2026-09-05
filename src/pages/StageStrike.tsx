@@ -511,6 +511,13 @@ export function StageStrike() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.7, ease: [0.19, 1, 0.22, 1] }}
             className="absolute inset-0 h-full w-full object-cover"
+            onError={(e) => {
+              // Fallback til standard-banneret hvis et spil-banner mangler i public/
+              const img = e.currentTarget;
+              if (!img.src.endsWith("/stage-strike-banner.jpg")) {
+                img.src = "/stage-strike-banner.jpg";
+              }
+            }}
           />
         </AnimatePresence>
         <div
