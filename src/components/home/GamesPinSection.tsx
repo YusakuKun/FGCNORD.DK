@@ -9,8 +9,8 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 const GAMES: Array<{
   id: string;
   navn: string;
-  logo: string;
-  /** Valgfri banner-grafik i stedet for logo (fx arkiverede spil der genaktiveres) */
+  logo?: string;
+  /** Banner-grafik i stedet for logo (fx spil uden eget logo-asset) */
   banner?: string;
   tekst: string;
   chip: string;
@@ -44,42 +44,43 @@ const GAMES: Array<{
     bg: "from-emerald-900/30 via-teal-900/20 to-coal",
     accent: "#4FD1C5",
   },
-  // MKWii er arkiveret — genaktivér ved at genindsætte panelet her:
-  // { id: "mkwii", navn: "MARIO KART WII", banner: "/stage-strike-banner-mkwii.jpg", ... }
+  {
+    id: "mkwii",
+    navn: "MARIO KART WII",
+    banner: "/stage-strike-banner-mkwii.jpg",
+    tekst: "Vores elskede side-event. Når bracket er færdig, ryger hjulene på — alle kan være med, og heldet kan vende på sidste omgang.",
+    chip: "Wii · Side-events",
+    bg: "from-lime-900/30 via-green-900/20 to-coal",
+    accent: "#95D600",
+  },
 ];
 
-/** Pin-sektion på coal: ét spil i fokus ad gangen, med logo, gradient-bg og progress-bar. */
+/**
+ * Pin-sektion på coal: ét spil i fokus ad gangen.
+ * Synlighed styres af React-state (CSS-transitions) — GSAP står KUN for
+ * pin + scroll-progress, så layoutet aldrig overlapper, selv hvis GSAP
+ * ikke initialiserer (fx reduced motion eller script-fejl).
+ */
 function GamesPinSection() {
   const container = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(0);
+  const [progress, setProgress] = useState(0);
 
   useGSAP(
     () => {
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      if (reduced) return;
-      const panels = gsap.utils.toArray<HTMLElement>(".game-panel");
-      gsap.set(panels, { autoAlpha: 0, y: 60, scale: 0.96 });
-      gsap.set(panels[0], { autoAlpha: 1, y: 0, scale: 1 });
+      if (reduced || !container.current) return;
 
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: container.current,
-          start: "top top",
-          end: "+=200%",
-          pin: true,
-          scrub: 0.6,
-          onUpdate: (self) => {
-            const idx = Math.min(GAMES.length - 1, Math.floor(self.progress * GAMES.length));
-            setActive(idx);
-            gsap.to(".game-progress-fill", { scaleY: self.progress, overwrite: "auto", duration: 0.1 });
-          },
+      ScrollTrigger.create({
+        trigger: container.current,
+        start: "top top",
+        end: `+=${(GAMES.length - 1) * 100}%`,
+        pin: true,
+        scrub: 0.6,
+        onUpdate: (self) => {
+          setActive(Math.min(GAMES.length - 1, Math.floor(self.progress * GAMES.length)));
+          setProgress(self.progress);
         },
-      });
-
-      panels.forEach((panel, i) => {
-        if (i === 0) return;
-        tl.to(panels[i - 1], { autoAlpha: 0, y: -60, scale: 0.96, duration: 0.4 }, i)
-          .to(panel, { autoAlpha: 1, y: 0, scale: 1, duration: 0.4 }, i + 0.1);
       });
     },
     { scope: container }
@@ -103,8 +104,8 @@ function GamesPinSection() {
           {/* Progress-bar i venstre kant */}
           <div className="absolute left-0 top-1/2 h-48 w-[6px] -translate-y-1/2 rounded-full bg-cream/15">
             <div
-              className="game-progress-fill h-full w-full origin-top rounded-full bg-brick"
-              style={{ transform: "scaleY(0)" }}
+              className="h-full w-full origin-top rounded-full bg-brick"
+              style={{ transform: `scaleY(${progress})` }}
             />
           </div>
 
@@ -118,42 +119,57 @@ function GamesPinSection() {
           </div>
 
           <div className="relative mt-14 min-h-[380px] md:min-h-[340px]">
-            {GAMES.map((g) => (
-              <div key={g.id} className="game-panel absolute inset-0 flex flex-col justify-center">
-                <div className="flex flex-col items-start gap-8 lg:flex-row lg:items-center">
-                  <div className="flex w-full max-w-[320px] items-center justify-center overflow-hidden rounded-2xl border-[3px] border-ink bg-cream shadow-poster-lg">
-                    {g.banner ? (
-                      <img
-                        src={g.banner}
-                        alt={g.navn}
-                        className="aspect-[16/10] w-full object-cover"
-                      />
-                    ) : (
-                      <img
-                        src={g.logo}
-                        alt={g.navn}
-                        className="h-auto w-full max-w-[260px] object-contain p-6 lg:p-8"
-                      />
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-display text-[30px] uppercase leading-[1.05] text-cream md:text-[48px]">
-                      {g.navn}
-                    </h3>
-                    <p className="mt-5 max-w-xl text-[16px] leading-[1.7] text-cream/80 md:text-[17px]">
-                      {g.tekst}
-                    </p>
-                    <span
-                      className="mt-6 inline-block rounded-full border-2 border-cream/50 px-4 py-1.5 text-[12px] font-bold uppercase tracking-[0.14em] text-cream/85"
-                      style={{ borderColor: `${g.accent}80`, color: g.accent }}
-                    >
-                      {g.chip}
-                    </span>
-                    <Sparkle size={30} className="mt-6 block" color={g.accent} />
+            {GAMES.map((g, i) => {
+              const isActive = active === i;
+              return (
+                <div
+                  key={g.id}
+                  className="game-panel absolute inset-0 flex flex-col justify-center transition-all duration-500 ease-out"
+                  style={{
+                    opacity: isActive ? 1 : 0,
+                    visibility: isActive ? "visible" : "hidden",
+                    transform: isActive
+                      ? "translateY(0) scale(1)"
+                      : `translateY(${i < active ? -40 : 40}px) scale(0.97)`,
+                    pointerEvents: isActive ? "auto" : "none",
+                  }}
+                  aria-hidden={!isActive}
+                >
+                  <div className="flex flex-col items-start gap-8 lg:flex-row lg:items-center">
+                    <div className="flex w-full max-w-[320px] items-center justify-center overflow-hidden rounded-2xl border-[3px] border-ink bg-cream shadow-poster-lg">
+                      {g.banner ? (
+                        <img
+                          src={g.banner}
+                          alt={g.navn}
+                          className="aspect-[16/10] w-full object-cover"
+                        />
+                      ) : (
+                        <img
+                          src={g.logo}
+                          alt={g.navn}
+                          className="h-auto w-full max-w-[260px] object-contain p-6 lg:p-8"
+                        />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-display text-[30px] uppercase leading-[1.05] text-cream md:text-[48px]">
+                        {g.navn}
+                      </h3>
+                      <p className="mt-5 max-w-xl text-[16px] leading-[1.7] text-cream/80 md:text-[17px]">
+                        {g.tekst}
+                      </p>
+                      <span
+                        className="mt-6 inline-block rounded-full border-2 border-cream/50 px-4 py-1.5 text-[12px] font-bold uppercase tracking-[0.14em] text-cream/85"
+                        style={{ borderColor: `${g.accent}80`, color: g.accent }}
+                      >
+                        {g.chip}
+                      </span>
+                      <Sparkle size={30} className="mt-6 block" color={g.accent} />
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
