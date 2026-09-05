@@ -18,13 +18,13 @@ const VALUES = [
 
 const TEASER_BANNERS = [
   {
-    src: "/stage-strike-banner.jpg",
+    src: "/stage-strike-banner.jpg?v=2",
     label: "Melee",
     time: "Nat",
     alt: "Flydende platform-stage under nordlys om natten",
   },
   {
-    src: "/stage-strike-banner-ultimate.jpg",
+    src: "/stage-strike-banner-ultimate.jpg?v=2",
     label: "Ultimate",
     time: "Dag",
     alt: "Samme flydende stage i klart dagslys",

@@ -100,14 +100,14 @@ const GAME_CONFIG: Record<
     label: "Ultimate",
     bans: 3,
     stages: ULTIMATE_STAGES,
-    banner: "/stage-strike-banner-ultimate.jpg",
+    banner: "/stage-strike-banner-ultimate.jpg?v=2",
     bannerAlt: "Flydende platform-stages i dagslys over nordiske bjerge",
   },
   melee: {
     label: "Melee",
     bans: 1,
     stages: MELEE_STAGES,
-    banner: "/stage-strike-banner.jpg",
+    banner: "/stage-strike-banner.jpg?v=2",
     bannerAlt: "Nordlys over flydende platform-stages om natten",
   },
   mkwii: {
@@ -115,7 +115,7 @@ const GAME_CONFIG: Record<
     bans: 0,
     stages: MKWII_TRACKS,
     racing: true,
-    banner: "/stage-strike-banner-mkwii.jpg",
+    banner: "/stage-strike-banner-mkwii.jpg?v=2",
     bannerAlt: "Flydende platform-stages i solnedgang over nordiske bjerge",
   },
 };
@@ -514,8 +514,8 @@ export function StageStrike() {
             onError={(e) => {
               // Fallback til standard-banneret hvis et spil-banner mangler i public/
               const img = e.currentTarget;
-              if (!img.src.endsWith("/stage-strike-banner.jpg")) {
-                img.src = "/stage-strike-banner.jpg";
+              if (!img.src.includes("/stage-strike-banner.jpg")) {
+                img.src = "/stage-strike-banner.jpg?v=2";
               }
             }}
           />

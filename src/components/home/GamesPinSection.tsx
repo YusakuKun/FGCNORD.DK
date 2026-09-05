@@ -47,7 +47,7 @@ const GAMES: Array<{
   {
     id: "mkwii",
     navn: "MARIO KART WII",
-    banner: "/stage-strike-banner-mkwii.jpg",
+    banner: "/stage-strike-banner-mkwii.jpg?v=2",
     tekst: "Vores elskede side-event. Når bracket er færdig, ryger hjulene på — alle kan være med, og heldet kan vende på sidste omgang.",
     chip: "Wii · Side-events",
     bg: "from-lime-900/30 via-green-900/20 to-coal",
