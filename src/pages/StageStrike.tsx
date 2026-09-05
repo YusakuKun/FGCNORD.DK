@@ -87,11 +87,37 @@ const MKWII_TRACKS: StrikeStage[] = [
 
 const GAME_CONFIG: Record<
   StrikeGame,
-  { label: string; bans: number; stages: StrikeStage[]; racing?: boolean }
+  {
+    label: string;
+    bans: number;
+    stages: StrikeStage[];
+    racing?: boolean;
+    banner: string;
+    bannerAlt: string;
+  }
 > = {
-  ultimate: { label: "Ultimate", bans: 3, stages: ULTIMATE_STAGES },
-  melee: { label: "Melee", bans: 1, stages: MELEE_STAGES },
-  mkwii: { label: "Mario Kart Wii", bans: 0, stages: MKWII_TRACKS, racing: true },
+  ultimate: {
+    label: "Ultimate",
+    bans: 3,
+    stages: ULTIMATE_STAGES,
+    banner: "/stage-strike-banner-ultimate.jpg",
+    bannerAlt: "Flydende platform-stages i dagslys over nordiske bjerge",
+  },
+  melee: {
+    label: "Melee",
+    bans: 1,
+    stages: MELEE_STAGES,
+    banner: "/stage-strike-banner.jpg",
+    bannerAlt: "Nordlys over flydende platform-stages om natten",
+  },
+  mkwii: {
+    label: "Mario Kart Wii",
+    bans: 0,
+    stages: MKWII_TRACKS,
+    racing: true,
+    banner: "/stage-strike-banner-mkwii.jpg",
+    bannerAlt: "Flydende platform-stages i solnedgang over nordiske bjerge",
+  },
 };
 
 type Phase =
@@ -473,13 +499,20 @@ export function StageStrike() {
 
   return (
     <div className="min-h-screen bg-coal pb-20 text-cream">
-      {/* Banner — nordlys over flydende stages */}
-      <div className="relative h-[260px] w-full overflow-hidden sm:h-[340px] md:h-[420px]">
-        <img
-          src="/stage-strike-banner.jpg"
-          alt="Nordlys over flydende platform-stages"
-          className="absolute inset-0 h-full w-full object-cover"
-        />
+      {/* Banner — samme stage, forskellig tid på døgnet pr. spil */}
+      <div className="relative h-[260px] w-full overflow-hidden bg-ink sm:h-[340px] md:h-[420px]">
+        <AnimatePresence mode="sync">
+          <motion.img
+            key={game}
+            src={config.banner}
+            alt={config.bannerAlt}
+            initial={{ opacity: 0, scale: 1.04 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.7, ease: [0.19, 1, 0.22, 1] }}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        </AnimatePresence>
         <div
           aria-hidden="true"
           className="absolute inset-0 bg-gradient-to-t from-coal via-coal/40 to-coal/10"
