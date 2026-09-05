@@ -225,7 +225,7 @@ export function Om() {
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg border-2 border-ink bg-cream-dim shadow-poster-sm">
                   <value.icon className="h-5 w-5 text-brick" />
                 </div>
-                <h3 className="font-heading text-xl font-bold">{value.title}</h3>
+                <h3 className="font-heading text-xl font-bold text-ink">{value.title}</h3>
                 <p className="mt-2 text-ink/70">{value.description}</p>
               </motion.div>
             ))}
