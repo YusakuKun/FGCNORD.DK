@@ -3,7 +3,7 @@ import { Swords, Trophy, UserPlus, Users } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { DiscordIcon } from "@/components/Navbar";
+import { DiscordIcon, DISCORD_URL } from "@/components/Navbar";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import {
@@ -227,11 +227,18 @@ export function Lobby() {
                 Lobbyen åbner på weekly-aftener. Hold øje på Discord — eller se ranglisten
                 imens.
               </p>
-              <Button asChild className="mt-5 bg-brick text-coal hover:bg-brick-soft">
-                <Link to="/rangliste">
-                  <Trophy className="mr-2 h-4 w-4" aria-hidden="true" /> Se ranglisten
-                </Link>
-              </Button>
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                <Button asChild className="bg-brick text-coal hover:bg-brick-soft">
+                  <Link to="/rangliste">
+                    <Trophy className="mr-2 h-4 w-4" aria-hidden="true" /> Se ranglisten
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="border-ink">
+                  <a href={DISCORD_URL} target="_blank" rel="noreferrer">
+                    <DiscordIcon size={16} /> <span className="ml-2">Join Discord</span>
+                  </a>
+                </Button>
+              </div>
             </motion.div>
           ) : (
             <motion.div
