@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { Trophy } from "lucide-react";
+import { Swords, Trophy } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { PageHeader } from "@/components/PageHeader";
 import { getLeaderboard, type LeaderboardRow } from "@/lib/lobbyApi";
@@ -76,6 +77,14 @@ export function Rangliste() {
               <p className="mt-2 text-ink/60">
                 Spil casuals i lobbyen eller weekly-turneringen — så ryger du på listen.
               </p>
+              <div className="mt-5">
+                <Link
+                  to="/lobby"
+                  className="inline-flex items-center gap-2 rounded-full border-2 border-ink bg-brick px-5 py-2 text-sm font-bold uppercase tracking-wide text-coal shadow-poster-sm transition-all hover:-translate-y-0.5 hover:bg-brick-soft"
+                >
+                  <Swords className="h-4 w-4" aria-hidden="true" /> Gå til lobbyen
+                </Link>
+              </div>
             </motion.div>
           ) : (
             <motion.ul
