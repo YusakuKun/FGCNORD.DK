@@ -299,7 +299,7 @@ export function BlivMedlem() {
       </section>
 
       {/* Login + perks */}
-      <section className="section-padding bg-olive text-cream">
+      <section className="section-padding bg-coal text-cream">
         <div className="container-site px-4 sm:px-6 lg:px-8">
           <div className="grid items-start gap-12 lg:grid-cols-2">
             <div>
