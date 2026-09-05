@@ -63,17 +63,17 @@ const GALLERY = [
     caption: "Efterfest med crewet",
   },
   {
-    src: "/gallery/himmerlan-05.jpg",
+    src: "/HimmerlanIgen%20(9).jpg",
     alt: "Crewet samlet på trappen i venue under HimmerLAN",
     caption: "Crewet · HimmerLAN",
   },
   {
-    src: "/gallery/himmerlan-11.jpg",
+    src: "/HimmerlanIgen%20(4).jpg",
     alt: "To medlemmer griner sammen på gaden om natten til afterparty",
     caption: "Afterparty i byen",
   },
   {
-    src: "/gallery/himmerlan-08.jpg",
+    src: "/HimmerlanIgen%20(1).jpg",
     alt: "Spillere foran setups med skærme og controllere",
     caption: "Casuals ved setuppene",
   },
@@ -310,7 +310,7 @@ export function Home() {
             transition={{ duration: 0.7, ease: EASE }}
           >
             <img
-              src="/gallery/himmerlan-01.jpg"
+              src="/HimmerlanIgen%20(5).JPG"
               alt="Venue under HimmerLAN med setups, borde og stort projektorlærred"
               className="w-full rounded-2xl border-[3px] border-ink shadow-poster-lg"
             />
