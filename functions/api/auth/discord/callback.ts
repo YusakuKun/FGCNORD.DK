@@ -1,12 +1,7 @@
-import {
-  ApiContext,
-  corsHeaders,
-  getOrigin,
-  handleError,
-  ResponseError,
-} from "../../../lib/api";
+import { ApiContext, corsHeaders, getOrigin } from "../../../lib/api";
 import { createSession } from "../../../lib/session";
 import { ulid } from "../../../lib/ulid";
+import { OAUTH_STATE_COOKIE } from "../discord";
 
 interface DiscordTokenResponse {
   access_token: string;
@@ -27,16 +22,41 @@ function getRedirectUri(ctx: ApiContext): string {
   );
 }
 
-function decodeReturnTo(state: string | null): string {
-  if (!state) return "/";
+function parseState(state: string | null): { n: string | null; r: string } {
+  if (!state) return { n: null, r: "/" };
   try {
     const b64 = state.replaceAll("-", "+").replaceAll("_", "/");
-    const parsed = JSON.parse(atob(b64)) as { r?: string };
+    const parsed = JSON.parse(atob(b64)) as { n?: string; r?: string };
     const r = parsed.r || "/";
-    return r.startsWith("/") && !r.startsWith("//") ? r : "/";
+    return {
+      n: typeof parsed.n === "string" ? parsed.n : null,
+      r: r.startsWith("/") && !r.startsWith("//") ? r : "/",
+    };
   } catch {
-    return "/";
+    return { n: null, r: "/" };
   }
+}
+
+function getCookie(header: string | null, name: string): string | null {
+  if (!header) return null;
+  for (const part of header.split(";")) {
+    const [key, ...rest] = part.trim().split("=");
+    if (key === name) return decodeURIComponent(rest.join("="));
+  }
+  return null;
+}
+
+const CLEAR_STATE_COOKIE = `${OAUTH_STATE_COOKIE}=; Path=/api/auth; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+
+function withErrorParam(path: string, code: string): string {
+  return `${path}${path.includes("?") ? "&" : "?"}auth_error=${code}`;
+}
+
+/** 302-redirect med ét eller flere Set-Cookie headere */
+function redirect(location: string, cookies: string[] = []): Response {
+  const headers = new Headers({ Location: location });
+  for (const c of cookies) headers.append("Set-Cookie", c);
+  return new Response(null, { status: 302, headers });
 }
 
 /** Tjek om Discord-brugeren er på vores server (kræver bot token + guild id) */
@@ -71,26 +91,35 @@ export async function onRequestGet(
   context: EventContext<Env, never, { ctx: ApiContext }>,
 ): Promise<Response> {
   const ctx = context.data.ctx;
-  const origin = getOrigin(ctx.request);
+  const url = new URL(ctx.request.url);
+  const { n, r } = parseState(url.searchParams.get("state"));
+
+  // Brugeren afbrød hos Discord → send stille tilbage uden fejlbesked
+  if (url.searchParams.get("error")) {
+    return redirect(r, [CLEAR_STATE_COOKIE]);
+  }
+
+  // CSRF-værn: state-noncen skal matche cookien fra login-start
+  const cookieNonce = getCookie(
+    ctx.request.headers.get("Cookie"),
+    OAUTH_STATE_COOKIE,
+  );
+  if (!n || !cookieNonce || n !== cookieNonce) {
+    return redirect(withErrorParam("/bliv-medlem", "state"), [CLEAR_STATE_COOKIE]);
+  }
+
+  const code = url.searchParams.get("code");
+  if (!code) {
+    return redirect(withErrorParam(r, "code"), [CLEAR_STATE_COOKIE]);
+  }
+
+  const clientId = ctx.env.DISCORD_CLIENT_ID;
+  const clientSecret = ctx.env.DISCORD_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    return redirect(withErrorParam(r, "config"), [CLEAR_STATE_COOKIE]);
+  }
+
   try {
-    const url = new URL(ctx.request.url);
-    const code = url.searchParams.get("code");
-    const errorDesc = url.searchParams.get("error_description");
-    if (errorDesc) {
-      throw new ResponseError(errorDesc, 400);
-    }
-    if (!code) {
-      throw new ResponseError("Manglende Discord-kode.", 400);
-    }
-
-    const clientId = ctx.env.DISCORD_CLIENT_ID;
-    const clientSecret = ctx.env.DISCORD_CLIENT_SECRET;
-    if (!clientId || !clientSecret) {
-      throw new ResponseError("Discord OAuth er ikke konfigureret.", 503);
-    }
-
-    const redirectUri = getRedirectUri(ctx);
-
     const tokenRes = await fetch("https://discord.com/api/oauth2/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -99,12 +128,11 @@ export async function onRequestGet(
         client_secret: clientSecret,
         grant_type: "authorization_code",
         code,
-        redirect_uri: redirectUri,
+        redirect_uri: getRedirectUri(ctx),
       }),
     });
     if (!tokenRes.ok) {
-      const text = await tokenRes.text();
-      throw new ResponseError(`Discord token fejl: ${text}`, 502);
+      return redirect(withErrorParam(r, "discord"), [CLEAR_STATE_COOKIE]);
     }
     const tokenData = (await tokenRes.json()) as DiscordTokenResponse;
 
@@ -114,8 +142,7 @@ export async function onRequestGet(
       },
     });
     if (!userRes.ok) {
-      const text = await userRes.text();
-      throw new ResponseError(`Discord bruger fejl: ${text}`, 502);
+      return redirect(withErrorParam(r, "discord"), [CLEAR_STATE_COOKIE]);
     }
     const user = (await userRes.json()) as DiscordUser;
 
@@ -176,17 +203,18 @@ export async function onRequestGet(
       player.id,
     );
 
-    const safeReturnTo = decodeReturnTo(url.searchParams.get("state"));
-
-    return new Response(null, {
-      status: 302,
-      headers: {
-        Location: safeReturnTo,
-        "Set-Cookie": cookie,
-        ...corsHeaders(origin),
-      },
-    });
-  } catch (err) {
-    return handleError(err, origin);
+    return redirect(r, [cookie, CLEAR_STATE_COOKIE]);
+  } catch {
+    // Netværks-/databasefejl → pæn fejlside frem for rå JSON
+    return redirect(withErrorParam(r, "discord"), [CLEAR_STATE_COOKIE]);
   }
+}
+
+export async function onRequestOptions(
+  context: EventContext<Env, never, { ctx: ApiContext }>,
+): Promise<Response> {
+  return new Response(null, {
+    status: 204,
+    headers: corsHeaders(getOrigin(context.data.ctx.request)),
+  });
 }
