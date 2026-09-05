@@ -29,12 +29,6 @@ const TEASER_BANNERS = [
     time: "Dag",
     alt: "Samme flydende stage i klart dagslys",
   },
-  {
-    src: "/stage-strike-banner-mkwii.jpg",
-    label: "Mario Kart Wii",
-    time: "Solnedgang",
-    alt: "Samme flydende stage i varm solnedgang",
-  },
 ];
 
 const GALLERY = [
@@ -375,9 +369,8 @@ export function Home() {
         <div className="mx-auto max-w-[820px] px-6">
           <SectionHeader eyebrow="Værktøj" title="Strike som en pro" centered light />
           <p className="mx-auto mt-6 max-w-xl text-[16px] leading-[1.7] text-cream/85 md:text-[17px]">
-            Brug vores interaktive stage strike-værktøj til Ultimate og Melee — og banevalg til
-            Mario Kart Wii — med reglerne bygget ind. Samme stage, tre tider på døgnet. Perfekt til
-            weeklies og træning.
+            Brug vores interaktive stage strike-værktøj til Ultimate og Melee — med reglerne
+            bygget ind. Samme stage, to tider på døgnet. Perfekt til weeklies og træning.
           </p>
           <div className="mt-10 flex justify-center gap-4 overflow-x-auto px-2 pb-2 md:gap-6">
             {TEASER_BANNERS.map((b, i) => (

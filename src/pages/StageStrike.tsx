@@ -540,9 +540,8 @@ export function StageStrike() {
             transition={{ duration: 0.6, delay: 0.16 }}
             className="mt-3 max-w-xl text-[15px] leading-relaxed text-cream/90 drop-shadow md:text-base"
           >
-            Stream-overlay til stage striking i Smash Ultimate og Melee – og
-            banevalg i Mario Kart Wii. Værktøjet styrer 1-2-1, bans, DSR og
-            tilfældig trækning – I skal bare spille.
+            Stream-overlay til stage striking i Smash Ultimate og Melee.
+            Værktøjet styrer 1-2-1, bans og DSR – I skal bare spille.
           </motion.p>
         </div>
       </div>
@@ -558,7 +557,8 @@ export function StageStrike() {
                 aria-label="Vælg spil"
                 className="flex gap-1 rounded-xl border-2 border-brick/30 bg-ink/60 p-1.5"
               >
-                {(["ultimate", "melee", "mkwii"] as StrikeGame[]).map((g) => (
+                {/* MKWii er arkiveret — genaktivér ved at tilføje "mkwii" til listen */}
+                {(["ultimate", "melee"] as StrikeGame[]).map((g) => (
                   <Button
                     key={g}
                     variant={game === g ? "default" : "ghost"}
