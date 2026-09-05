@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import {
+  AlertCircle,
   ArrowRight,
   BadgeCheck,
   Check,
@@ -10,9 +11,10 @@ import {
   Sparkles,
   Trophy,
   Users,
+  X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import { CTASection } from "@/components/CTASection";
 import { DISCORD_URL, DiscordIcon } from "@/components/Navbar";
@@ -22,6 +24,7 @@ import {
   Accordion,
   AccordionItem,
 } from "@/components/ui/accordion";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -96,9 +99,22 @@ const faqs = [
   },
 ];
 
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  state: "Login-sessionen udløb eller var ugyldig. Prøv at logge ind igen.",
+  code: "Discord sendte dig tilbage uden en login-kode. Prøv igen.",
+  discord: "Discord kunne ikke gennemføre login lige nu. Prøv igen om lidt.",
+  config: "Discord-login er ikke sat op endnu. Sig til til crewet på Discord.",
+};
+
 function DiscordAuthCard() {
   const [me, setMe] = useState<MeResponse | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const authError = searchParams.get("auth_error");
+  const authErrorText = authError
+    ? (AUTH_ERROR_MESSAGES[authError] ??
+      "Noget gik galt under login. Prøv igen — og sig til på Discord, hvis det bliver ved.")
+    : null;
 
   useEffect(() => {
     fetch("/api/me", { credentials: "include" })
@@ -112,6 +128,27 @@ function DiscordAuthCard() {
 
   return (
     <div className="rounded-2xl border-2 border-ink bg-coal p-8 text-cream shadow-poster-lg">
+      {authErrorText && (
+        <Alert variant="olive" role="alert" className="mb-6 border-brick/60 bg-ink/80 text-cream">
+          <AlertCircle className="h-4 w-4" aria-hidden="true" />
+          <AlertTitle>Login fejlede</AlertTitle>
+          <AlertDescription className="flex items-start justify-between gap-3 text-cream/80">
+            <span>{authErrorText}</span>
+            <button
+              type="button"
+              aria-label="Luk fejlbesked"
+              onClick={() => {
+                const next = new URLSearchParams(searchParams);
+                next.delete("auth_error");
+                setSearchParams(next, { replace: true });
+              }}
+              className="shrink-0 rounded-md p-1 hover:bg-cream/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brick"
+            >
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </AlertDescription>
+        </Alert>
+      )}
       {loading ? (
         <div className="flex items-center gap-2 text-cream/70">
           <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
