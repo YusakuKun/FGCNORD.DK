@@ -383,7 +383,7 @@ export function Turneringer() {
                       className="mx-auto mb-4 h-12 w-12 text-ink/30"
                       aria-hidden="true"
                     />
-                    <h2 className="font-heading text-xl font-bold">
+                    <h2 className="font-heading text-xl font-bold text-ink">
                       Ingen events fundet
                     </h2>
                     {events.length === 0 ? (
