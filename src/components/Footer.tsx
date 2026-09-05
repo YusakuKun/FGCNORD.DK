@@ -102,9 +102,6 @@ export function Footer() {
         <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t-2 border-cream/15 pt-6 text-[14px] text-cream/60 md:flex-row">
           <p>© 2026 FGC Nord · Fællesskab drevet af frivillige</p>
           <div className="flex gap-6">
-            <Link to="/pr" className="transition-colors hover:text-brick-soft">
-              Rankings
-            </Link>
             <Link to="/om" className="transition-colors hover:text-brick-soft">
               Privatliv
             </Link>
