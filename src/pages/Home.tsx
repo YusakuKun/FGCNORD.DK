@@ -86,8 +86,6 @@ const FOCUS_DARK =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brick-soft focus-visible:ring-offset-2 focus-visible:ring-offset-coal";
 const FOCUS_LIGHT =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brick focus-visible:ring-offset-2 focus-visible:ring-offset-cream";
-const FOCUS_OLIVE =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brick-soft focus-visible:ring-offset-2 focus-visible:ring-offset-olive";
 
 export function Home() {
   const reduced = useReducedMotion();
@@ -109,7 +107,7 @@ export function Home() {
               Fighting Game Community Nordjylland
             </motion.p>
             <h1 className="mt-5 font-display text-[42px] uppercase leading-[1.02] tracking-[-0.02em] text-cream sm:text-[56px] md:text-[80px] lg:text-[88px]">
-              {"KOM & KÆMP".split(" ").map((ord, i) => (
+              {"VI SES I BRACKET".split(" ").map((ord, i) => (
                 <span key={i} className="inline-block overflow-hidden align-bottom">
                   <motion.span
                     className="inline-block"
@@ -169,7 +167,7 @@ export function Home() {
               className="mt-8 flex flex-wrap gap-2.5"
               aria-label="Spil vi spiller"
             >
-              {["Melee", "Ultimate", "RoA2"].map((chip) => (
+              {["Melee", "Ultimate", "RoA2", "MK Wii"].map((chip) => (
                 <li
                   key={chip}
                   className="rounded-full border-2 border-cream/50 px-4 py-1.5 text-[12px] font-bold uppercase tracking-[0.14em] text-cream/90"
@@ -195,12 +193,12 @@ export function Home() {
               <img
                 src="/hero-illustration.png"
                 alt="Rivals of Aether 2 key art med spillets karakterer samlet omkring logoet"
-                className="relative w-full max-w-[560px] rounded-2xl border-[3px] border-cream shadow-poster-cream"
+                className="relative w-full max-w-[560px] rotate-[1.2deg] rounded-2xl border-[3px] border-cream shadow-poster-cream"
               />
               <img
                 src="/fgc5_light_transparent.png"
                 alt="FGC Nord logo"
-                className="absolute -top-16 left-1/2 w-[150px] -translate-x-1/2 motion-safe:animate-float md:-top-24 md:w-[220px]"
+                className="absolute -top-16 left-1/2 w-[150px] -translate-x-1/2 drop-shadow-[0_10px_28px_rgba(0,174,239,0.5)] motion-safe:animate-float md:-top-24 md:w-[220px]"
               />
             </motion.div>
           </div>
@@ -231,7 +229,7 @@ export function Home() {
               key={dup}
               className="flex items-center font-display text-[16px] uppercase tracking-[0.08em] text-ink md:text-[18px]"
             >
-              {["Melee", "Ultimate", "Rivals of Aether 2", "Weeklies i Aalborg", "Grassroots", "Nordjylland", "Alle niveauer"].map(
+              {["Melee", "Ultimate", "Rivals of Aether 2", "Mario Kart Wii", "Weeklies i Aalborg", "Grassroots", "Nordjylland", "Alle niveauer"].map(
                 (ord) => (
                   <span key={ord} className="flex items-center">
                     <span className="px-5">{ord}</span>
@@ -244,11 +242,8 @@ export function Home() {
         </div>
       </div>
 
-      {/* 2. WAVE DIVIDER coal → olive */}
-      <WaveDivider fill="#51512A" className="bg-coal" />
-
       {/* 3. KOMMENDE EVENTS */}
-      <section id="events" className="scroll-mt-24 bg-olive pb-24 pt-4 text-cream">
+      <section id="events" className="scroll-mt-24 bg-coal pb-24 pt-24 text-cream">
         <div className="mx-auto max-w-[1200px] px-6">
           <SectionHeader eyebrow="Kalender" title="Kommende events" light />
           {upcomingEvents.length === 0 && (
@@ -289,7 +284,7 @@ export function Home() {
           <div className="mt-10">
             <Link
               to="/turneringer"
-              className={`link-underline inline-flex items-center gap-2 rounded-sm text-[15px] font-semibold uppercase tracking-[0.02em] text-cream ${FOCUS_OLIVE}`}
+              className={`link-underline inline-flex items-center gap-2 rounded-sm text-[15px] font-semibold uppercase tracking-[0.02em] text-cream ${FOCUS_DARK}`}
             >
               Se alle turneringer <ArrowRight size={18} aria-hidden="true" />
             </Link>
@@ -297,8 +292,8 @@ export function Home() {
         </div>
       </section>
 
-      {/* 4. WAVE DIVIDER olive → cream */}
-      <WaveDivider fill="#F4F8FB" className="bg-olive" />
+      {/* 4. WAVE DIVIDER coal → cream */}
+      <WaveDivider fill="#F4F8FB" className="bg-coal" />
 
       {/* 5. HVAD ER FGC NORD */}
       <section className="bg-cream py-16 text-ink md:py-24">

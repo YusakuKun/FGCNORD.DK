@@ -145,7 +145,7 @@ export function Om() {
       </section>
 
       {/* History */}
-      <section className="section-padding bg-olive text-cream">
+      <section className="section-padding bg-coal text-cream">
         <div className="container-site px-4 sm:px-6 lg:px-8">
           <SectionHeader
             eyebrow="Historie"
