@@ -159,7 +159,7 @@ export function Home() {
               className="mt-8 flex flex-wrap gap-2.5"
               aria-label="Spil vi spiller"
             >
-              {["Melee", "Ultimate", "RoA2", "Mario Kart Wii"].map((chip) => (
+              {["Melee", "Ultimate", "RoA2"].map((chip) => (
                 <li
                   key={chip}
                   className="rounded-full border-2 border-cream/50 px-4 py-1.5 text-[12px] font-bold uppercase tracking-[0.14em] text-cream/90"
@@ -205,10 +205,34 @@ export function Home() {
           className={`absolute bottom-5 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-1 text-[11px] font-bold uppercase tracking-[0.18em] text-cream/70 transition-colors hover:text-cream md:flex ${FOCUS_DARK}`}
           aria-label="Scroll ned til kommende events"
         >
-          Udforsk
+          Se hvad vi har
           <ChevronDown size={20} aria-hidden="true" className="motion-safe:animate-bounce" />
         </motion.a>
       </section>
+
+      {/* 1b. MARQUEE-TICKER (Cool Shirtz-energi) */}
+      <div
+        className="overflow-hidden border-y-[3px] border-ink bg-brick py-3"
+        aria-hidden="true"
+      >
+        <div className="flex w-max animate-marquee whitespace-nowrap">
+          {[0, 1].map((dup) => (
+            <span
+              key={dup}
+              className="flex items-center font-display text-[16px] uppercase tracking-[0.08em] text-ink md:text-[18px]"
+            >
+              {["Melee", "Ultimate", "Rivals of Aether 2", "Weeklies i Aalborg", "Grassroots", "Nordjylland", "Alle niveauer"].map(
+                (ord) => (
+                  <span key={ord} className="flex items-center">
+                    <span className="px-5">{ord}</span>
+                    <span className="text-[13px]">✦</span>
+                  </span>
+                )
+              )}
+            </span>
+          ))}
+        </div>
+      </div>
 
       {/* 2. WAVE DIVIDER coal → olive */}
       <WaveDivider fill="#51512A" className="bg-coal" />

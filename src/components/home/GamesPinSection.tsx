@@ -6,7 +6,17 @@ import { Sparkle } from "@/components/Sparkle";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-const GAMES = [
+const GAMES: Array<{
+  id: string;
+  navn: string;
+  logo: string;
+  /** Valgfri banner-grafik i stedet for logo (fx arkiverede spil der genaktiveres) */
+  banner?: string;
+  tekst: string;
+  chip: string;
+  bg: string;
+  accent: string;
+}> = [
   {
     id: "melee",
     navn: "SUPER SMASH BROS. MELEE",
@@ -34,15 +44,8 @@ const GAMES = [
     bg: "from-emerald-900/30 via-teal-900/20 to-coal",
     accent: "#4FD1C5",
   },
-  {
-    id: "mkwii",
-    navn: "MARIO KART WII",
-    banner: "/stage-strike-banner-mkwii.jpg",
-    tekst: "Game night-favoritten. Vi kører løb med rigtigt banevalg — tilfældig første bane, taberen vælger, ingen gentagelser i serien.",
-    chip: "Wii · Grand Prix",
-    bg: "from-amber-900/40 via-rose-900/20 to-coal",
-    accent: "#FF9E3D",
-  },
+  // MKWii er arkiveret — genaktivér ved at genindsætte panelet her:
+  // { id: "mkwii", navn: "MARIO KART WII", banner: "/stage-strike-banner-mkwii.jpg", ... }
 ];
 
 /** Pin-sektion på coal: ét spil i fokus ad gangen, med logo, gradient-bg og progress-bar. */
@@ -119,7 +122,7 @@ function GamesPinSection() {
               <div key={g.id} className="game-panel absolute inset-0 flex flex-col justify-center">
                 <div className="flex flex-col items-start gap-8 lg:flex-row lg:items-center">
                   <div className="flex w-full max-w-[320px] items-center justify-center overflow-hidden rounded-2xl border-[3px] border-ink bg-cream shadow-poster-lg">
-                    {"banner" in g && g.banner ? (
+                    {g.banner ? (
                       <img
                         src={g.banner}
                         alt={g.navn}
