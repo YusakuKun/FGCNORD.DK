@@ -511,6 +511,13 @@ export function StageStrike() {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.7, ease: [0.19, 1, 0.22, 1] }}
             className="absolute inset-0 h-full w-full object-cover"
+            onError={(e) => {
+              // Fallback til standard-banneret hvis et spil-banner mangler i public/
+              const img = e.currentTarget;
+              if (!img.src.endsWith("/stage-strike-banner.jpg")) {
+                img.src = "/stage-strike-banner.jpg";
+              }
+            }}
           />
         </AnimatePresence>
         <div
@@ -797,7 +804,7 @@ export function StageStrike() {
                       onClick={resetSeries}
                       className="min-h-[44px] bg-brick font-bold text-coal hover:bg-brick-soft"
                     >
-                      <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
+                      <RotateCcw className="mr-2 h-5 w-5" aria-hidden="true" />
                       Ny serie
                     </Button>
                   </div>
