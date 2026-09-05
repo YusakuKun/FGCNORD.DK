@@ -94,6 +94,13 @@
     @apply px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24;
   }
 
+  /* Lyse sektioner arver ink-tekst som standard (body er ellers cream),
+     så overskrifter på cream-baggrund aldrig bliver usynlige */
+  .section-padding.bg-cream,
+  .section-padding.bg-cream-dim {
+    @apply text-ink;
+  }
+
   .container-site {
     @apply mx-auto w-full max-w-[1200px];
   }
@@ -136,7 +143,7 @@
   }
 
   .card-poster {
-    @apply rounded-xl border-[3px] border-ink bg-cream shadow-poster transition-all;
+    @apply rounded-xl border-[3px] border-ink bg-cream text-ink shadow-poster transition-all;
   }
 
   .card-poster-interactive {
