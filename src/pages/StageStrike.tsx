@@ -804,7 +804,7 @@ export function StageStrike() {
                       onClick={resetSeries}
                       className="min-h-[44px] bg-brick font-bold text-coal hover:bg-brick-soft"
                     >
-                      <RotateCcw className="mr-2 h-5 w-5" aria-hidden="true" />
+                      <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
                       Ny serie
                     </Button>
                   </div>
