@@ -22,7 +22,7 @@ export async function onRequestGet(
     }
 
     const rows = await ctx.env.DB.prepare(
-      `SELECT p.gamertag, p.discord_avatar, r.rating, r.wins, r.losses, r.matches_played, r.updated_at
+      `SELECT p.gamertag, p.discord_id, p.discord_avatar, r.rating, r.wins, r.losses, r.matches_played, r.updated_at
        FROM ratings r
        JOIN players p ON p.id = r.player_id
        WHERE r.game = ?

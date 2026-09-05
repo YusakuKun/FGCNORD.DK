@@ -96,6 +96,7 @@ export async function cancelLobbyMatch(matchId: string) {
 
 export interface LeaderboardRow {
   gamertag: string;
+  discord_id: string | null;
   discord_avatar: string | null;
   rating: number;
   wins: number;
