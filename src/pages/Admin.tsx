@@ -514,7 +514,7 @@ export function Admin() {
                     >
                       <div className="flex flex-wrap items-center justify-between gap-3">
                         <div>
-                          <p className="font-heading font-bold">{t.name}</p>
+                          <p className="font-heading font-bold text-ink">{t.name}</p>
                           <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ink/60">
                             <span>{gameLabels[t.game] || t.game}</span>
                             <span className="flex items-center gap-1">
