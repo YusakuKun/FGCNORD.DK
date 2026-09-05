@@ -3,6 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { Admin } from "@/pages/Admin";
 import { BlivMedlem } from "@/pages/BlivMedlem";
+import Galleri from "@/pages/Galleri";
 import { Home } from "@/pages/Home";
 import { Lobby } from "@/pages/Lobby";
 import { Om } from "@/pages/Om";
@@ -29,6 +30,7 @@ function App() {
         <Route path="t/:code/mig" element={<TournamentMe />} />
         <Route path="t/:code/bracket" element={<TournamentBracket />} />
         <Route path="om" element={<Om />} />
+        <Route path="galleri" element={<Galleri />} />
         <Route path="bliv-medlem" element={<BlivMedlem />} />
         <Route path="admin" element={<Admin />} />
         <Route path="*" element={<Placeholder />} />

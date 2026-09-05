@@ -10,6 +10,7 @@ const LINKS = [
   { to: "/lobby", label: "Lobby" },
   { to: "/rangliste", label: "Rangliste" },
   { to: "/stage-strike", label: "Stage Strike" },
+  { to: "/galleri", label: "Galleri" },
   { to: "/om", label: "Om fællesskabet" },
 ];
 
