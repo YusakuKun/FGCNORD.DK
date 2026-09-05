@@ -168,6 +168,7 @@ export async function adminCreateTournament(
     tournament: {
       id: string;
       name: string;
+      game: string;
       join_code: string;
     };
   }>;
@@ -231,4 +232,37 @@ export interface Match {
   next_winner_match_id: string | null;
   next_loser_match_id: string | null;
   created_at: number;
+}
+
+/* ---------- Admin: start.gg resultat-import + annoncering ---------- */
+
+export interface ImportResultsSummary {
+  success: boolean;
+  event: string;
+  tournament: string;
+  game: string;
+  totalSets: number;
+  imported: number;
+  skipped: number;
+  unmatched: string[];
+}
+
+/** Importér færdige sæt fra et start.gg-event til Elo-ranglisten */
+export async function adminImportStartggResults(
+  adminKey: string,
+  slug: string,
+  game?: string,
+) {
+  return fetchAdmin("/admin/import-startgg", adminKey, {
+    method: "POST",
+    body: JSON.stringify({ slug, ...(game ? { game } : {}) }),
+  }) as Promise<ImportResultsSummary>;
+}
+
+/** Annoncér et start.gg-event på Discord (med ping til medlemsrollen) */
+export async function adminAnnounceEvent(adminKey: string, slug: string) {
+  return fetchAdmin("/admin/announce-event", adminKey, {
+    method: "POST",
+    body: JSON.stringify({ slug }),
+  }) as Promise<{ success: boolean; event: string }>;
 }
