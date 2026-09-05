@@ -91,7 +91,7 @@ export async function confirmLobbyMatch(matchId: string) {
 export async function cancelLobbyMatch(matchId: string) {
   return fetchJson(`/lobby/matches/${encodeURIComponent(matchId)}`, {
     method: "DELETE",
-  }) as Promise<{ success: boolean }>;
+  }) as Promise<{ success: boolean; status: string }>;
 }
 
 export interface LeaderboardRow {
