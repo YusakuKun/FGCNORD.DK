@@ -12,57 +12,57 @@ interface Photo {
 
 const PHOTOS: Photo[] = [
   {
-    src: "/gallery/himmerlan-05.jpg",
+    src: "/HimmerlanIgen%20(9).jpg",
     alt: "Crewet samlet på trappen i venue under HimmerLAN",
     caption: "Crewet · HimmerLAN",
   },
   {
-    src: "/gallery/himmerlan-01.jpg",
+    src: "/HimmerlanIgen%20(5).JPG",
     alt: "Overblik over venue med setups, borde og stort lærred",
     caption: "Venue-oversigt · HimmerLAN",
   },
   {
-    src: "/gallery/himmerlan-10.jpg",
+    src: "/HimmerlanIgen%20(3).jpg",
     alt: "Rivals of Aether-kamp på skærmen: Zetterburn mod Maypul",
     caption: "Rivals of Aether · HimmerLAN",
   },
   {
-    src: "/gallery/himmerlan-08.jpg",
+    src: "/HimmerlanIgen%20(1).jpg",
     alt: "Spillere foran setups med skærme og controllere",
     caption: "Casuals ved setuppene",
   },
   {
-    src: "/gallery/himmerlan-06.jpg",
+    src: "/HimmerlanIgen%20(10).jpg",
     alt: "Medlem med Toad-hue i venue",
     caption: "Stemning · HimmerLAN",
   },
   {
-    src: "/gallery/himmerlan-04.jpg",
+    src: "/HimmerlanIgen%20(8).jpg",
     alt: "Wii Sports på skærmen med Mii-figuren Aaron",
     caption: "Side-event · Wii Sports",
   },
   {
-    src: "/gallery/himmerlan-02.jpg",
+    src: "/HimmerlanIgen%20(6).JPG",
     alt: "Medlem holder farverige kasser i trappeanlægget",
     caption: "Stemning · HimmerLAN",
   },
   {
-    src: "/gallery/himmerlan-11.jpg",
+    src: "/HimmerlanIgen%20(4).jpg",
     alt: "To medlemmer griner sammen på gaden om natten til afterparty",
     caption: "Afterparty i byen",
   },
   {
-    src: "/gallery/himmerlan-07.jpg",
+    src: "/HimmerlanIgen%20(11).jpg",
     alt: "To medlemmer sidder og snakker til afterparty",
     caption: "Afterparty",
   },
   {
-    src: "/gallery/himmerlan-03.jpg",
+    src: "/HimmerlanIgen%20(7).jpg",
     alt: "Medlem drikker en øl til afterparty",
     caption: "Afterparty",
   },
   {
-    src: "/gallery/himmerlan-09.jpg",
+    src: "/HimmerlanIgen%20(2).jpg",
     alt: "Håndtegnet øl-label med portræt ved siden af originalfotoet på en telefon",
     caption: "Afterparty-kunst",
   },
