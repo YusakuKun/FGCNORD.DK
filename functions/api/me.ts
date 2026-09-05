@@ -11,8 +11,46 @@ interface MemberPlayerRow {
 }
 
 /**
+ * Live-tjek af medlemsrollen via Discord-botten.
+ * Returnerer null ved manglende config eller fejl — så rører vi ikke DB-status.
+ */
+async function fetchLiveMembership(
+  env: {
+    DISCORD_BOT_TOKEN?: string;
+    DISCORD_GUILD_ID?: string;
+    DISCORD_MEMBER_ROLE_ID?: string;
+  },
+  discordUserId: string,
+): Promise<boolean | null> {
+  const botToken = env.DISCORD_BOT_TOKEN;
+  const guildId = env.DISCORD_GUILD_ID;
+  const roleId = env.DISCORD_MEMBER_ROLE_ID;
+  if (!botToken || !guildId) return null;
+  try {
+    const res = await fetch(
+      `https://discord.com/api/guilds/${guildId}/members/${discordUserId}`,
+      { headers: { Authorization: `Bot ${botToken}` } },
+    );
+    if (res.ok) {
+      // Medlemskab = medlemsrollen på serveren. Er rollen ikke konfigureret,
+      // tæller rent server-medlemskab.
+      if (!roleId) return true;
+      const member = (await res.json()) as { roles?: string[] };
+      return Array.isArray(member.roles) && member.roles.includes(roleId);
+    }
+    if (res.status === 404) return false;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * GET /api/me — login- og medlemsstatus for den aktuelle session.
  * Bruges fx af /bliv-medlem til at vise "du er medlem"-kortet.
+ *
+ * Medlemsstatus gen-tjekkes live mod Discord ved hvert kald (hvis botten er
+ * konfigureret), så en ny tildelt rolle slår igennem uden gen-login.
  */
 export async function onRequestGet(
   context: EventContext<Env, never, unknown>,
@@ -38,7 +76,23 @@ export async function onRequestGet(
       .bind(player.id)
       .first<MemberPlayerRow>();
 
-    const isMember = row?.is_member === 1;
+    let isMember = row?.is_member === 1;
+    let memberSince = row?.member_since ?? null;
+
+    // Live gen-tjek af medlemsrollen (kræver bot token + guild id)
+    if (player.discord_id) {
+      const live = await fetchLiveMembership(context.env, player.discord_id);
+      if (live !== null && live !== isMember) {
+        isMember = live;
+        memberSince = live ? (memberSince ?? Date.now()) : null;
+        await context.env.DB.prepare(
+          "UPDATE players SET is_member = ?, member_since = ? WHERE id = ?",
+        )
+          .bind(live ? 1 : 0, memberSince, player.id)
+          .run();
+      }
+    }
+
     const avatarUrl =
       row?.discord_avatar && player.discord_id
         ? `https://cdn.discordapp.com/avatars/${player.discord_id}/${row.discord_avatar}.png?size=128`
@@ -48,7 +102,7 @@ export async function onRequestGet(
       {
         authenticated: true,
         isMember,
-        memberSince: row?.member_since ?? null,
+        memberSince,
         player: {
           id: row?.id ?? player.id,
           gamertag: row?.gamertag ?? player.gamertag,
