@@ -91,11 +91,12 @@ export async function confirmLobbyMatch(matchId: string) {
 export async function cancelLobbyMatch(matchId: string) {
   return fetchJson(`/lobby/matches/${encodeURIComponent(matchId)}`, {
     method: "DELETE",
-  }) as Promise<{ success: boolean; status: string }>;
+  }) as Promise<{ success: boolean }>;
 }
 
 export interface LeaderboardRow {
   gamertag: string;
+  discord_id: string | null;
   discord_avatar: string | null;
   rating: number;
   wins: number;
