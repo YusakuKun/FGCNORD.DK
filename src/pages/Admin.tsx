@@ -6,6 +6,7 @@ import {
   Download,
   Gamepad2,
   KeyRound,
+  Megaphone,
   Play,
   Plus,
   QrCode,
@@ -29,8 +30,12 @@ import {
   adminOpenLobby,
   adminCloseLobby,
   adminStartTournament,
+  adminImportStartggResults,
+  adminAnnounceEvent,
   type AdminTournament,
+  type ImportResultsSummary,
 } from "@/lib/tournamentApi";
+import { getStartggEvents, type StartggEvent } from "@/lib/startggApi";
 import { getCurrentLobby, type LobbyState } from "@/lib/lobbyApi";
 
 const KEY_STORAGE = "fgc_admin_key";
@@ -87,6 +92,11 @@ export function Admin() {
   const [lobbyGame, setLobbyGame] = useState("ultimate");
   const [lobbyStations, setLobbyStations] = useState("2");
 
+  // start.gg: resultat-import + annoncering
+  const [importSlug, setImportSlug] = useState("");
+  const [importGame, setImportGame] = useState("auto");
+  const [sgEvents, setSgEvents] = useState<StartggEvent[] | null>(null);
+
   const load = useCallback(async () => {
     if (!key) return;
     setError(null);
@@ -104,6 +114,13 @@ export function Admin() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (!key) return;
+    getStartggEvents()
+      .then((r) => setSgEvents(r.events))
+      .catch(() => setSgEvents(null));
+  }, [key]);
 
   const unlock = () => {
     if (keyInput.trim().length < 8) {
@@ -226,6 +243,53 @@ export function Admin() {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Kunne ikke lukke lobby");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleImportResults = async () => {
+    if (importSlug.trim().length < 5) {
+      setError("Indsæt en start.gg event-slug (eller fuld URL).");
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const res: ImportResultsSummary = await adminImportStartggResults(
+        key,
+        importSlug.trim(),
+        importGame === "auto" ? undefined : importGame,
+      );
+      const parts = [
+        `${res.imported} nye sæt talt med på ${gameLabels[res.game] || res.game}-ranglisten fra "${res.event}".`,
+        res.skipped > 0 ? `${res.skipped} sprunget over (allerede importeret/DQ/bye).` : "",
+      ];
+      if (res.unmatched.length > 0) {
+        parts.push(
+          `Kunne ikke matche: ${res.unmatched.slice(0, 8).join(", ")} — opret dem i lobbyen og importér igen.`,
+        );
+      }
+      setNotice(parts.filter(Boolean).join(" "));
+      setImportSlug("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Importen fejlede");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleAnnounce = async (slug: string, eventName: string) => {
+    if (!confirm(`Annoncér "${eventName}" på Discord med ping til medlemsrollen?`)) {
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      await adminAnnounceEvent(key, slug);
+      setNotice(`"${eventName}" er annonceret på Discord.`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Annonceringen fejlede");
     } finally {
       setBusy(false);
     }
@@ -582,6 +646,96 @@ export function Admin() {
               )}
             </motion.div>
           </div>
+
+          {/* start.gg: resultat-import + event-annoncering */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="mt-8 rounded-2xl border-[3px] border-ink bg-cream-dim p-6 text-ink shadow-poster"
+          >
+            <h2 className="flex items-center gap-2 font-heading text-xl font-bold">
+              <Download className="h-5 w-5 text-brick" aria-hidden="true" />
+              start.gg — resultater & annoncering
+            </h2>
+            <div className="mt-4 grid items-start gap-6 md:grid-cols-2">
+              {/* Resultat-import */}
+              <div className="rounded-xl border-2 border-ink bg-cream p-5 shadow-poster-sm">
+                <h3 className="font-heading font-bold">Importér resultater til ranglisten</h3>
+                <p className="mt-1 text-sm text-ink/60">
+                  Tæller alle færdige sæt fra et start.gg-event med på Elo-ranglisten.
+                  Sæt importeres kun én gang — poster opsummering på Discord.
+                </p>
+                <label className="mt-4 block text-sm font-bold">Event-slug eller URL</label>
+                <input
+                  type="text"
+                  value={importSlug}
+                  onChange={(e) => setImportSlug(e.target.value)}
+                  placeholder="tournament/weekly-77/event/ultimate-singles"
+                  className="mt-1 w-full rounded-lg border-2 border-ink bg-cream px-4 py-2.5 font-mono text-sm shadow-poster-sm outline-none focus:ring-2 focus:ring-brick"
+                />
+                <label className="mt-3 block text-sm font-bold">Spil (normalt auto)</label>
+                <select
+                  value={importGame}
+                  onChange={(e) => setImportGame(e.target.value)}
+                  className="mt-1 w-full rounded-lg border-2 border-ink bg-cream px-4 py-2.5 font-bold shadow-poster-sm outline-none focus:ring-2 focus:ring-brick"
+                >
+                  <option value="auto">Auto (fra eventet)</option>
+                  <option value="ultimate">Ultimate</option>
+                  <option value="melee">Melee</option>
+                  <option value="roa2">Rivals of Aether 2</option>
+                </select>
+                <Button
+                  onClick={() => void handleImportResults()}
+                  disabled={busy}
+                  className="mt-4 w-full bg-brick text-coal hover:bg-brick-soft"
+                >
+                  <Download className="mr-2 h-4 w-4" aria-hidden="true" />
+                  Importér resultater
+                </Button>
+              </div>
+
+              {/* Event-annoncering */}
+              <div className="rounded-xl border-2 border-ink bg-cream p-5 shadow-poster-sm">
+                <h3 className="font-heading font-bold">Annoncér event på Discord</h3>
+                <p className="mt-1 text-sm text-ink/60">
+                  Kommende events fra jeres start.gg-konto. Annoncering pinger medlemsrollen.
+                </p>
+                {sgEvents === null ? (
+                  <p className="mt-4 text-sm text-ink/60">Henter events fra start.gg…</p>
+                ) : sgEvents.length === 0 ? (
+                  <p className="mt-4 text-sm text-ink/60">
+                    Ingen kommende events fundet på start.gg.
+                  </p>
+                ) : (
+                  <ul className="mt-4 space-y-2">
+                    {sgEvents.slice(0, 5).map((e) => (
+                      <li
+                        key={e.id}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-lg border-2 border-ink/20 bg-cream-dim px-3 py-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold">{e.name}</p>
+                          <p className="text-xs text-ink/60">
+                            {formatDateTime(e.startAt)} · {e.numAttendees} tilmeldte
+                          </p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() => void handleAnnounce(e.url, e.name)}
+                          className="shrink-0 border-2 border-ink"
+                        >
+                          <Megaphone className="mr-1 h-4 w-4" aria-hidden="true" /> Annoncér
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
     </>
