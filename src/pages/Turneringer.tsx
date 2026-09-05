@@ -240,7 +240,7 @@ export function Turneringer() {
             </p>
             <div className="flex items-center gap-2">
               <Badge variant={source === "google" ? "secondary" : "outline"}>
-                {source === "google" ? "Google Calendar" : "Demo-data"}
+                {source === "google" ? "Google Calendar" : "Lokal kalender"}
               </Badge>
               <div
                 className="flex rounded-md border-2 border-ink bg-cream p-0.5 shadow-poster-sm"
@@ -297,7 +297,7 @@ export function Turneringer() {
             </Alert>
           )}
 
-          {/* Demo-data info */}
+          {/* Kalender-fallback info */}
           {loadState === "ready" && error && source === "fallback" && (
             <Alert className="mb-6" variant="olive">
               <AlertCircle className="h-4 w-4" aria-hidden="true" />
@@ -386,17 +386,44 @@ export function Turneringer() {
                     <h2 className="font-heading text-xl font-bold">
                       Ingen events fundet
                     </h2>
-                    <p className="mt-2 text-ink/60">
-                      Prøv at nulstille filtrene for at se flere events.
-                    </p>
-                    <Button
-                      variant="outline"
-                      className="mt-4 border-ink"
-                      onClick={resetFilters}
-                    >
-                      <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                      Nulstil filtre
-                    </Button>
+                    {events.length === 0 ? (
+                      <p className="mx-auto mt-2 max-w-md text-ink/60">
+                        Der er ingen planlagte events lige nu. Vi annoncerer weeklies og
+                        turneringer løbende på{" "}
+                        <a
+                          href="https://discord.gg/fgcnord"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-bold text-brick underline underline-offset-2"
+                        >
+                          Discord
+                        </a>{" "}
+                        og{" "}
+                        <a
+                          href="https://start.gg/fgcnord"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-bold text-brick underline underline-offset-2"
+                        >
+                          start.gg
+                        </a>
+                        .
+                      </p>
+                    ) : (
+                      <>
+                        <p className="mt-2 text-ink/60">
+                          Prøv at nulstille filtrene for at se flere events.
+                        </p>
+                        <Button
+                          variant="outline"
+                          className="mt-4 border-ink"
+                          onClick={resetFilters}
+                        >
+                          <RotateCcw className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                          Nulstil filtre
+                        </Button>
+                      </>
+                    )}
                   </div>
                 )}
               </motion.div>
