@@ -217,6 +217,27 @@ export function Home() {
       <section id="events" className="scroll-mt-24 bg-olive pb-24 pt-4 text-cream">
         <div className="mx-auto max-w-[1200px] px-6">
           <SectionHeader eyebrow="Kalender" title="Kommende events" light />
+          {upcomingEvents.length === 0 && (
+            <div className="mt-12 rounded-2xl border-[3px] border-cream/40 bg-ink/30 p-8 text-center">
+              <p className="text-[16px] leading-[1.7] text-cream/90 md:text-[17px]">
+                Vi annoncerer weeklies og turneringer løbende — følg med på{" "}
+                <a
+                  href="https://discord.gg/fgcnord"
+                  className="font-bold text-brick-soft underline underline-offset-4"
+                >
+                  Discord
+                </a>{" "}
+                eller{" "}
+                <a
+                  href="https://start.gg/fgcnord"
+                  className="font-bold text-brick-soft underline underline-offset-4"
+                >
+                  start.gg
+                </a>
+                , hvor tilmeldingen også sker.
+              </p>
+            </div>
+          )}
           <div className="mt-12 flex snap-x snap-mandatory gap-6 overflow-x-auto pb-4 md:grid md:grid-cols-3 md:overflow-visible">
             {upcomingEvents.map((event, i) => (
               <motion.div

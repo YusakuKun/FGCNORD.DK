@@ -7,8 +7,6 @@ import { Home } from "@/pages/Home";
 import { Lobby } from "@/pages/Lobby";
 import { Om } from "@/pages/Om";
 import { Placeholder } from "@/pages/Placeholder";
-import { PowerRankingDetail } from "@/pages/PowerRankingDetail";
-import { PowerRankings } from "@/pages/PowerRankings";
 import { Rangliste } from "@/pages/Rangliste";
 import { StageStrike } from "@/pages/StageStrike";
 import { TournamentBracket } from "@/pages/TournamentBracket";
@@ -30,8 +28,6 @@ function App() {
         <Route path="t/:code" element={<TournamentLanding />} />
         <Route path="t/:code/mig" element={<TournamentMe />} />
         <Route path="t/:code/bracket" element={<TournamentBracket />} />
-        <Route path="pr" element={<PowerRankings />} />
-        <Route path="pr/:slug" element={<PowerRankingDetail />} />
         <Route path="om" element={<Om />} />
         <Route path="bliv-medlem" element={<BlivMedlem />} />
         <Route path="admin" element={<Admin />} />
